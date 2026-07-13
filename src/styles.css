@@ -682,10 +682,6 @@ blockquote {
   grid-template-columns: minmax(420px, 1fr) minmax(340px, 0.82fr);
 }
 
-.agent-report {
-  grid-row: span 3;
-}
-
 .agent-report p {
   color: #4f5f62;
 }
@@ -693,6 +689,128 @@ blockquote {
 .tool-trace p {
   grid-template-columns: 1fr auto;
   margin-bottom: 8px;
+}
+
+.anomaly-panel,
+.action-plan,
+.tuning-panel,
+.manual-checks {
+  display: grid;
+  gap: 10px;
+}
+
+.anomaly-panel h2,
+.action-plan h2,
+.tuning-panel h2,
+.manual-checks h2 {
+  margin-bottom: 0;
+}
+
+.anomaly-panel article,
+.action-plan article,
+.tuning-panel article,
+.manual-checks p {
+  background: #f7f8f3;
+  border: 1px solid #e1e6dc;
+  border-radius: 8px;
+  margin: 0;
+  padding: 12px;
+}
+
+.anomaly-panel article {
+  border-left: 4px solid #85a895;
+}
+
+.anomaly-panel article.severity-medium {
+  border-left-color: #d6a35c;
+}
+
+.anomaly-panel article.severity-high {
+  border-left-color: #c65d4b;
+}
+
+.anomaly-panel article > div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.anomaly-panel span {
+  background: #eef4ee;
+  border-radius: 999px;
+  color: #597168;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+
+.anomaly-panel p,
+.action-plan p {
+  color: #4f5f62;
+  margin: 8px 0 4px;
+}
+
+.anomaly-panel small,
+.tuning-panel small {
+  color: #7a6658;
+  line-height: 1.45;
+}
+
+.action-plan article,
+.tuning-panel article,
+.manual-checks p {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 24px 1fr;
+}
+
+.action-plan svg,
+.tuning-panel svg,
+.manual-checks svg {
+  color: #c65d4b;
+}
+
+.action-plan span {
+  color: #597168;
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  margin-top: 3px;
+}
+
+.tuning-panel p {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+.tuning-panel p::after {
+  color: #8e9b93;
+  content: "->";
+  order: 2;
+}
+
+.tuning-panel span {
+  background: #edf1eb;
+  border-radius: 6px;
+  color: #5e6868;
+  order: 1;
+  padding: 4px 8px;
+}
+
+.tuning-panel b {
+  background: #e6f0eb;
+  border-radius: 6px;
+  color: #255b66;
+  order: 3;
+  padding: 4px 8px;
+}
+
+.manual-checks span {
+  color: #4f5f62;
+  line-height: 1.5;
 }
 
 .npc-agent-card p,

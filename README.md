@@ -2,7 +2,7 @@
 
 面向“游戏运营 / AI Agent 工程师”岗位的 AI LiveOps 作品集项目。
 
-当前已经完成 Web MVP、NPC Agent 雏形和运营数据后台：
+当前已经完成 Web MVP、NPC Agent 雏形、运营数据后台和 AI 运营 Agent：
 
 1. 三天夜市经营循环。
 2. 进货、接待 NPC、销售和收摊结算。
@@ -14,6 +14,7 @@
 8. NPC Agent 工具轨迹：读取库存、价格、NPC 记忆和任务状态。
 9. Agent 页展示最近一次 NPC 决策、规则边界和 NPC 记忆账本。
 10. 运营后台展示任务完成率、商品购买转化、NPC 互动率、流失节点和基础 A/B 测试。
+11. AI 运营 Agent 基于运营指标生成日报、异常原因假设、行动计划、调参建议和活动配置草案。
 
 ## 本地运行
 
@@ -31,7 +32,7 @@ npm run build
 ## 当前版本
 
 ```text
-v0.3.0-ops-dashboard
+v0.4.0-ai-ops-agent
 ```
 
 ## 版本管理

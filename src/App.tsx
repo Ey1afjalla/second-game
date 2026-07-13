@@ -7,11 +7,13 @@ import {
   ClipboardCheck,
   Coins,
   FlaskConical,
+  Lightbulb,
   MessageSquareText,
   PackageSearch,
   RotateCcw,
   Sparkles,
   Store,
+  SlidersHorizontal,
   UserRoundCog,
   TrendingUp,
 } from 'lucide-react';
@@ -625,22 +627,105 @@ function buildMetrics(game: GameState) {
 
 function buildAgentReport(game: GameState, metrics: ReturnType<typeof buildMetrics>) {
   const emptyStock = game.products.filter((product) => product.stock === 0).map((product) => product.name);
-  const risk = emptyStock.length > 1 ? '库存断档正在增加，会压低接待成功率。' : '库存结构暂时健康，可以继续观察偏好商品。';
+  const weakProducts = metrics.productStats.filter((item) => item.sales === 0).map((item) => item.name);
+  const weakNpcs = metrics.npcStats.filter((item) => item.visits > 0 && item.affinity <= 1).map((item) => item.name);
+  const strongestVariant = metrics.abTest.reduce((best, item) => (item.retentionScore > best.retentionScore ? item : best), metrics.abTest[0]);
+  const risk =
+    emptyStock.length > 1
+      ? '库存断档正在增加，会压低接待成功率。'
+      : metrics.goalCompletion < 50
+        ? '任务完成率偏低，玩家可能不知道下一步应该优化什么。'
+        : '库存结构暂时健康，可以继续观察偏好商品。';
   const action =
     metrics.conversion < 70
       ? '建议明天给低价高魅力商品做限时折扣，并优先补足顾客偏好商品。'
-      : '建议保持当前价格，增加狐面具或醒魂茶的稀缺事件，提高高价值购买。';
+      : weakProducts.length > 2
+        ? '建议给滞销商品绑定 NPC 小剧情，避免商品池只被一两个爆款吃掉。'
+        : '建议保持当前价格，增加狐面具或醒魂茶的稀缺事件，提高高价值购买。';
   const evidence = `当前接待 ${game.visits} 人，成交 ${game.sales} 单，转化率 ${metrics.conversion}%，客单价 ${metrics.averageRevenue}。`;
+  const anomalies = [
+    {
+      title: '库存风险',
+      severity: emptyStock.length > 1 ? 'high' : emptyStock.length === 1 ? 'medium' : 'low',
+      evidence: emptyStock.length ? `${emptyStock.join('、')} 已断货。` : '当前没有大面积断货。',
+      hypothesis: emptyStock.length ? '偏好商品断货会让后续 NPC 更容易接受替代品或直接流失。' : '库存暂时能支撑下一轮接待。',
+    },
+    {
+      title: '任务完成',
+      severity: metrics.goalCompletion < 34 ? 'high' : metrics.goalCompletion < 67 ? 'medium' : 'low',
+      evidence: `三日目标完成率 ${metrics.goalCompletion}%。`,
+      hypothesis: metrics.goalCompletion < 67 ? '玩家可能需要更明确的阶段目标和奖励反馈。' : '目标节奏暂时可接受。',
+    },
+    {
+      title: '商品长尾',
+      severity: weakProducts.length >= 3 ? 'medium' : 'low',
+      evidence: weakProducts.length ? `${weakProducts.join('、')} 暂无销量。` : '所有商品都已有销售记录。',
+      hypothesis: weakProducts.length ? '商品缺少对应 NPC 触发或价格/魅力感知不足。' : '商品池覆盖良好。',
+    },
+  ];
+  const actionPlan = [
+    {
+      title: '补足偏好商品库存',
+      owner: '运营配置',
+      impact: emptyStock.length ? '降低到访未成交和替代推荐比例。' : '维持当前转化并观察下一日。',
+    },
+    {
+      title: '推出夜灯补贴实验',
+      owner: 'LiveOps',
+      impact: `${strongestVariant.name} 当前留存评分 ${strongestVariant.retentionScore}，适合作为下一版候选。`,
+    },
+    {
+      title: '给低销量商品绑定 NPC 事件',
+      owner: '内容策划',
+      impact: weakProducts.length ? `优先处理 ${weakProducts.slice(0, 2).join('、')}。` : '暂时无需强行干预。',
+    },
+  ];
+  const tuningSuggestions = [
+    {
+      key: 'preferred_item_restock_priority',
+      before: 'manual',
+      after: emptyStock.length ? 'high' : 'normal',
+      reason: '偏好商品直接影响 NPC 好感和成交稳定性。',
+    },
+    {
+      key: 'first_purchase_subsidy',
+      before: 0,
+      after: metrics.conversion < 80 || metrics.goalCompletion < 67 ? 3 : 1,
+      reason: '小额补贴能降低早期流失，并让玩家更快理解经营反馈。',
+    },
+    {
+      key: 'long_tail_story_trigger',
+      before: 'off',
+      after: weakProducts.length >= 2 ? 'on' : 'observe',
+      reason: '滞销商品需要剧情或任务牵引，而不是单纯降价。',
+    },
+  ];
+  const manualChecks = [
+    '确认补贴不会让前三天金币膨胀过快。',
+    '确认活动奖励只写入配置草案，不直接修改当前局内数值。',
+    weakNpcs.length ? `复查低好感 NPC：${weakNpcs.join('、')}。` : '继续观察 NPC 好感分布。',
+  ];
 
   return {
     summary: game.completed ? '三天试营业已结束，可以进入版本复盘。' : `第 ${game.day} 天运营中，Agent 已生成滚动建议。`,
     evidence,
     risk,
     action,
+    anomalies,
+    actionPlan,
+    tuningSuggestions,
+    manualChecks,
     configDraft: {
-      activityId: 'night-market-retention-001',
-      target: metrics.conversion < 70 ? '提升接待转化率' : '提升高价值商品销售',
-      bonus: metrics.conversion < 70 ? '首次购买赠送 3 铜钱补贴' : '狐面具稀有顾客概率 +15%',
+      activityId: 'night-market-retention-002',
+      target: metrics.conversion < 70 || metrics.goalCompletion < 67 ? '提升早期留存和任务完成率' : '提升高价值商品销售',
+      segment: 'day_1_to_day_3_new_players',
+      trigger: emptyStock.length ? 'preferred_item_stockout' : 'first_purchase_or_low_goal_progress',
+      bonus: metrics.conversion < 80 || metrics.goalCompletion < 67 ? '首次购买赠送 3 铜钱补贴' : '狐面具稀有顾客概率 +15%',
+      tuning: tuningSuggestions,
+      expectedImpact: {
+        conversionLift: metrics.conversion < 80 ? '+8% to +14%' : '+3% to +6%',
+        retentionScore: strongestVariant.retentionScore,
+      },
       guardrail: '活动配置需人工确认后进入游戏，不允许 Agent 直接改写金币或声望。',
     },
   };
@@ -794,12 +879,61 @@ function AgentDesk({ report, game, npcs }: { report: ReturnType<typeof buildAgen
         <h3>建议</h3>
         <p>{report.action}</p>
       </div>
+      <div className="panel anomaly-panel">
+        <h2>异常与原因假设</h2>
+        {report.anomalies.map((item) => (
+          <article key={item.title} className={`severity-${item.severity}`}>
+            <div>
+              <strong>{item.title}</strong>
+              <span>{item.severity}</span>
+            </div>
+            <p>{item.evidence}</p>
+            <small>{item.hypothesis}</small>
+          </article>
+        ))}
+      </div>
       <div className="panel tool-trace">
         <h2>Agent 工具调用轨迹</h2>
         <p><span>读取玩家数据</span><strong>{game.events.length} 条事件</strong></p>
         <p><span>读取商品配置</span><strong>{game.products.length} 个商品</strong></p>
         <p><span>读取 NPC 记忆</span><strong>{Object.keys(game.npcMemories).length} 个角色</strong></p>
+        <p><span>读取运营指标</span><strong>{report.anomalies.length} 个异常检查</strong></p>
         <p><span>生成活动草案</span><strong>等待人工确认</strong></p>
+      </div>
+      <div className="panel action-plan">
+        <h2>行动计划</h2>
+        {report.actionPlan.map((item) => (
+          <article key={item.title}>
+            <Lightbulb size={18} />
+            <div>
+              <strong>{item.title}</strong>
+              <span>{item.owner}</span>
+              <p>{item.impact}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="panel tuning-panel">
+        <h2>数值调参建议</h2>
+        {report.tuningSuggestions.map((item) => (
+          <article key={item.key}>
+            <SlidersHorizontal size={18} />
+            <div>
+              <strong>{item.key}</strong>
+              <p><span>{String(item.before)}</span><b>{String(item.after)}</b></p>
+              <small>{item.reason}</small>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="panel manual-checks">
+        <h2>人工确认清单</h2>
+        {report.manualChecks.map((item) => (
+          <p key={item}>
+            <ClipboardCheck size={18} />
+            <span>{item}</span>
+          </p>
+        ))}
       </div>
       <div className="panel npc-agent-card">
         <h2>最近 NPC Agent 决策</h2>
@@ -839,11 +973,16 @@ function AgentDesk({ report, game, npcs }: { report: ReturnType<typeof buildAgen
 
 function ConfigView({ products }: { products: Product[] }) {
   const config = {
-    version: 'ops-dashboard-0.3.0',
+    version: 'ai-ops-agent-0.4.0',
     maxDays: 3,
     analytics: {
       eventDriven: true,
       dashboards: ['goalCompletion', 'productConversion', 'npcInteraction', 'dropoffNodes', 'abTest'],
+    },
+    aiOpsAgent: {
+      enabled: true,
+      outputs: ['dailyReport', 'anomalyHypotheses', 'actionPlan', 'tuningSuggestions', 'activityConfigDraft'],
+      approvalRequired: true,
     },
     products: products.map(({ id, name, cost, price, charm }) => ({ id, name, cost, price, charm })),
     npcMemory: {
