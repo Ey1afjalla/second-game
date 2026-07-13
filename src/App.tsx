@@ -4,8 +4,11 @@ import {
   Bot,
   Boxes,
   CalendarDays,
+  ClipboardCheck,
   Coins,
+  FlaskConical,
   MessageSquareText,
+  PackageSearch,
   RotateCcw,
   Sparkles,
   Store,
@@ -537,13 +540,87 @@ function buildMetrics(game: GameState) {
   const conversion = game.visits ? Math.round((game.sales / game.visits) * 100) : 0;
   const averageRevenue = game.sales ? Math.round(game.revenue / game.sales) : 0;
   const missed = game.events.filter((event) => event.type === 'missed_sale').length;
+  const saleEvents = game.events.filter((event) => event.type === 'sale');
+  const visitEvents = game.events.filter((event) => event.type === 'npc_visit');
   const dayRevenue = [1, 2, 3].map((day) => ({
     day,
-    revenue: game.events.filter((event) => event.day === day && event.type === 'sale').reduce((sum, event) => sum + event.value, 0),
-    visits: game.events.filter((event) => event.day === day && event.type === 'npc_visit').length,
+    revenue: saleEvents.filter((event) => event.day === day).reduce((sum, event) => sum + event.value, 0),
+    visits: visitEvents.filter((event) => event.day === day).length,
+    sales: saleEvents.filter((event) => event.day === day).length,
   }));
+  const goalStats = dayRevenue.map((item) => {
+    const completed =
+      item.day === 1
+        ? item.visits >= 2 && item.revenue >= 25
+        : item.day === 2
+          ? item.visits >= 3 && game.satisfaction >= 62
+          : game.sales >= 4 && game.reputation >= 12;
 
-  return { conversion, averageRevenue, missed, dayRevenue };
+    return {
+      ...item,
+      goal: dayGoals[item.day - 1],
+      completed,
+      progress:
+        item.day === 1
+          ? Math.min(100, Math.round(((item.visits / 2 + item.revenue / 25) / 2) * 100))
+          : item.day === 2
+            ? Math.min(100, Math.round(((item.visits / 3 + game.satisfaction / 62) / 2) * 100))
+            : Math.min(100, Math.round(((game.sales / 4 + game.reputation / 12) / 2) * 100)),
+    };
+  });
+  const productStats = game.products.map((product) => {
+    const productSales = saleEvents.filter((event) => event.label === product.name);
+    const revenue = productSales.reduce((sum, event) => sum + event.value, 0);
+
+    return {
+      id: product.id,
+      name: product.name,
+      sales: productSales.length,
+      revenue,
+      stock: product.stock,
+      conversion: game.visits ? Math.round((productSales.length / game.visits) * 100) : 0,
+    };
+  });
+  const npcStats = npcs.map((npc) => {
+    const visits = visitEvents.filter((event) => event.label === npc.name).length;
+    const missedCount = game.events.filter((event) => event.type === 'missed_sale' && event.label === npc.name).length;
+    const memory = game.npcMemories[npc.id];
+
+    return {
+      name: npc.name,
+      visits,
+      affinity: memory.affinity,
+      mood: memory.mood,
+      missed: missedCount,
+      favorite: initialProducts.find((product) => product.id === npc.favorite)?.name ?? npc.favorite,
+    };
+  });
+  const dayEndEvents = game.events.filter((event) => event.type === 'day_end');
+  const dropoffNodes = [
+    { label: '进货后未接待', count: game.events.some((event) => event.type === 'buy_stock') && game.visits === 0 ? 1 : 0 },
+    { label: '到访未成交', count: missed },
+    { label: '收摊未达标', count: dayEndEvents.filter((event) => event.value === 0).length },
+    { label: '库存断档', count: game.products.filter((product) => product.stock === 0).length },
+  ];
+  const goalCompletion = Math.round((goalStats.filter((item) => item.completed).length / goalStats.length) * 100);
+  const abTest = [
+    {
+      name: 'A 当前版本',
+      conversion,
+      revenuePerVisit: game.visits ? Math.round(game.revenue / game.visits) : 0,
+      retentionScore: Math.min(100, Math.round((game.satisfaction + game.reputation * 3) / 1.3)),
+      note: '保持当前价格和自然 NPC 顺序。',
+    },
+    {
+      name: 'B 夜灯补贴',
+      conversion: Math.min(100, conversion + (missed > 0 ? 14 : 5)),
+      revenuePerVisit: game.visits ? Math.round((game.revenue + Math.max(6, missed * 8)) / Math.max(1, game.visits)) : 6,
+      retentionScore: Math.min(100, Math.round((game.satisfaction + 6 + game.reputation * 3) / 1.25)),
+      note: '首单低价商品补贴，优先补足偏好商品。',
+    },
+  ];
+
+  return { conversion, averageRevenue, missed, dayRevenue, goalStats, productStats, npcStats, dropoffNodes, goalCompletion, abTest };
 }
 
 function buildAgentReport(game: GameState, metrics: ReturnType<typeof buildMetrics>) {
@@ -571,6 +648,7 @@ function buildAgentReport(game: GameState, metrics: ReturnType<typeof buildMetri
 
 function OpsDashboard({ game, metrics }: { game: GameState; metrics: ReturnType<typeof buildMetrics> }) {
   const maxRevenue = Math.max(1, ...metrics.dayRevenue.map((item) => item.revenue));
+  const winner = metrics.abTest.reduce((best, item) => (item.retentionScore > best.retentionScore ? item : best), metrics.abTest[0]);
 
   return (
     <section className="dashboard-layout">
@@ -578,9 +656,10 @@ function OpsDashboard({ game, metrics }: { game: GameState; metrics: ReturnType<
         <Stat icon={<MessageSquareText size={18} />} label="接待人数" value={game.visits} />
         <Stat icon={<Coins size={18} />} label="总收入" value={game.revenue} />
         <Stat icon={<TrendingUp size={18} />} label="成交转化" value={`${metrics.conversion}%`} />
+        <Stat icon={<ClipboardCheck size={18} />} label="任务完成" value={`${metrics.goalCompletion}%`} />
         <Stat icon={<BarChart3 size={18} />} label="流失次数" value={metrics.missed} />
       </div>
-      <section className="panel">
+      <section className="panel trend-panel">
         <h2>三日收入与接待</h2>
         <div className="bars">
           {metrics.dayRevenue.map((item) => (
@@ -591,6 +670,95 @@ function OpsDashboard({ game, metrics }: { game: GameState; metrics: ReturnType<
               <strong>第 {item.day} 天</strong>
               <small>{item.revenue} 铜钱 · {item.visits} 人</small>
             </div>
+          ))}
+        </div>
+      </section>
+      <section className="panel goal-panel">
+        <h2>任务完成率</h2>
+        {metrics.goalStats.map((item) => (
+          <div key={item.day} className="goal-row">
+            <div>
+              <strong>第 {item.day} 天</strong>
+              <span>{item.goal}</span>
+            </div>
+            <div className="progress-track">
+              <i style={{ width: `${item.progress}%` }} />
+            </div>
+            <b className={item.completed ? 'success' : 'pending'}>{item.completed ? '已达成' : `${item.progress}%`}</b>
+          </div>
+        ))}
+      </section>
+      <section className="panel product-analytics">
+        <h2>商品购买转化</h2>
+        <div className="ops-table">
+          <p>
+            <span>商品</span>
+            <span>销量</span>
+            <span>收入</span>
+            <span>转化</span>
+            <span>库存</span>
+          </p>
+          {metrics.productStats.map((item) => (
+            <p key={item.id}>
+              <strong>{item.name}</strong>
+              <span>{item.sales}</span>
+              <span>{item.revenue}</span>
+              <span>{item.conversion}%</span>
+              <span>{item.stock}</span>
+            </p>
+          ))}
+        </div>
+      </section>
+      <section className="panel npc-analytics">
+        <h2>NPC 互动率</h2>
+        <div className="ops-table npc-table">
+          <p>
+            <span>NPC</span>
+            <span>到访</span>
+            <span>好感</span>
+            <span>情绪</span>
+            <span>偏好</span>
+          </p>
+          {metrics.npcStats.map((item) => (
+            <p key={item.name}>
+              <strong>{item.name}</strong>
+              <span>{item.visits}</span>
+              <span>{item.affinity}</span>
+              <span>{item.mood}</span>
+              <span>{item.favorite}</span>
+            </p>
+          ))}
+        </div>
+      </section>
+      <section className="panel dropoff-panel">
+        <h2>流失节点</h2>
+        <div className="dropoff-grid">
+          {metrics.dropoffNodes.map((node) => (
+            <div key={node.label}>
+              <PackageSearch size={18} />
+              <span>{node.label}</span>
+              <strong>{node.count}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="panel ab-panel">
+        <div className="panel-title">
+          <h2>基础 A/B 测试</h2>
+          <span>推荐：{winner.name}</span>
+        </div>
+        <div className="ab-grid">
+          {metrics.abTest.map((variant) => (
+            <article key={variant.name}>
+              <div>
+                <FlaskConical size={18} />
+                <strong>{variant.name}</strong>
+              </div>
+              <p><span>转化</span><b>{variant.conversion}%</b></p>
+              <p><span>客均收入</span><b>{variant.revenuePerVisit}</b></p>
+              <p><span>留存评分</span><b>{variant.retentionScore}</b></p>
+              <small>{variant.note}</small>
+            </article>
           ))}
         </div>
       </section>
@@ -671,8 +839,12 @@ function AgentDesk({ report, game, npcs }: { report: ReturnType<typeof buildAgen
 
 function ConfigView({ products }: { products: Product[] }) {
   const config = {
-    version: 'agent-npc-0.2.0',
+    version: 'ops-dashboard-0.3.0',
     maxDays: 3,
+    analytics: {
+      eventDriven: true,
+      dashboards: ['goalCompletion', 'productConversion', 'npcInteraction', 'dropoffNodes', 'abTest'],
+    },
     products: products.map(({ id, name, cost, price, charm }) => ({ id, name, cost, price, charm })),
     npcMemory: {
       enabled: true,

@@ -254,7 +254,7 @@ h3 {
 .kpi-row {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .play-panel .stat-grid {
@@ -423,6 +423,17 @@ blockquote {
   gap: 16px;
 }
 
+.dashboard-layout {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-layout .kpi-row,
+.trend-panel,
+.ab-panel,
+.event-table {
+  grid-column: 1 / -1;
+}
+
 .panel {
   padding: 18px;
 }
@@ -468,6 +479,176 @@ blockquote {
 .event-table div {
   display: grid;
   gap: 8px;
+}
+
+.goal-panel,
+.product-analytics,
+.npc-analytics,
+.dropoff-panel {
+  min-height: 300px;
+}
+
+.goal-row {
+  align-items: center;
+  background: #f7f8f3;
+  border: 1px solid #e1e6dc;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(160px, 1fr) minmax(120px, 0.8fr) 72px;
+  margin-bottom: 10px;
+  padding: 12px;
+}
+
+.goal-row div:first-child span {
+  color: #64716c;
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-top: 3px;
+}
+
+.progress-track {
+  background: #e6ece3;
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.progress-track i {
+  background: linear-gradient(90deg, #d86f55, #347568);
+  display: block;
+  height: 100%;
+}
+
+.goal-row b {
+  font-size: 13px;
+  text-align: right;
+}
+
+.goal-row .success {
+  color: #347568;
+}
+
+.goal-row .pending {
+  color: #9b604b;
+}
+
+.ops-table {
+  display: grid;
+  gap: 8px;
+}
+
+.ops-table p {
+  align-items: center;
+  background: #f7f8f3;
+  border: 1px solid #e1e6dc;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1.2fr repeat(4, 0.7fr);
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.ops-table p:first-child {
+  background: #eef4ee;
+  color: #597168;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ops-table strong {
+  color: #22313b;
+}
+
+.ops-table span {
+  color: #5e6868;
+}
+
+.dropoff-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.dropoff-grid div {
+  background: #f7f8f3;
+  border: 1px solid #e1e6dc;
+  border-radius: 8px;
+  min-height: 104px;
+  padding: 13px;
+}
+
+.dropoff-grid svg {
+  color: #c65d4b;
+}
+
+.dropoff-grid span {
+  color: #65706d;
+  display: block;
+  font-size: 13px;
+  margin: 10px 0 4px;
+}
+
+.dropoff-grid strong {
+  color: #22313b;
+  font-size: 28px;
+}
+
+.panel-title {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.panel-title span {
+  background: #eef4ee;
+  border: 1px solid #d6e0d5;
+  border-radius: 999px;
+  color: #347568;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 10px;
+}
+
+.ab-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ab-grid article {
+  background: #f7f8f3;
+  border: 1px solid #e1e6dc;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.ab-grid article > div {
+  align-items: center;
+  color: #255b66;
+  display: flex;
+  gap: 8px;
+}
+
+.ab-grid p {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.ab-grid span,
+.ab-grid small {
+  color: #64716c;
+}
+
+.ab-grid b {
+  color: #22313b;
 }
 
 .event-table p,
@@ -579,6 +760,7 @@ blockquote {
 
   .topbar,
   .game-layout,
+  .dashboard-layout,
   .agent-layout,
   .config-layout {
     grid-template-columns: 1fr;
@@ -612,9 +794,16 @@ blockquote {
   }
 
   .npc-panel,
+  .goal-row,
   .npc-agent-card p,
   .memory-ledger p,
+  .ops-table p,
   .event-table p {
+    grid-template-columns: 1fr;
+  }
+
+  .ab-grid,
+  .dropoff-grid {
     grid-template-columns: 1fr;
   }
 
