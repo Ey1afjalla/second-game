@@ -1,6 +1,6 @@
 [package]
 name = "second-game"
-version = "0.6.0"
+version = "1.0.0"
 description = "AI LiveOps Night Market desktop shell"
 authors = ["Eyjafjalla"]
 license = "MIT"
