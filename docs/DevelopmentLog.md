@@ -1,5 +1,35 @@
 # 开发日志
 
+## 2026-07-13 v0.6.0 Tauri Desktop
+
+完成内容：
+
+1. 新增 Tauri 2 桌面应用工程目录 `src-tauri`。
+2. 新增桌面端启动、构建和环境信息脚本。
+3. 将桌面端窗口配置为 1280 x 840，最小尺寸为 1024 x 720，适合面试演示时同时展示游戏、后台和 Agent 工作台。
+4. 设置桌面应用标识 `com.eyjafjalla.secondgame`。
+5. 将 Tauri 应用版本与前端版本同步为 `0.6.0`。
+6. 将桌面构建目标收敛到 Windows NSIS 安装包，避免作品集阶段生成过多无关产物。
+
+技术选择：
+
+1. 桌面端复用已有 Web 应用，不重写 UI，保证 Web 与桌面展示内容一致。
+2. 使用 Tauri 的 `beforeDevCommand` 和 `beforeBuildCommand` 串联 Vite 开发与生产构建流程。
+3. 先完成可运行、可打包的桌面壳，再逐步迁移本地配置历史到 SQLite。
+
+问题与解决：
+
+1. 默认 Tauri 初始化配置使用模板包名和小窗口，已改为作品集项目自己的产品名、应用标识和演示尺寸。
+2. 桌面端不额外引入后端逻辑，避免在封装阶段破坏已经验证过的 Web 功能闭环。
+
+版本状态：
+
+1. 已通过 `npm run build`。
+2. 已通过 `cargo check`。
+3. 已通过 `npm run desktop:build`，生成 Windows NSIS 安装包。
+4. 已短暂启动 `second-game.exe`，确认桌面程序进程可以正常拉起。
+5. 本版本完成后需要推送到 GitHub。
+
 ## 2026-07-13 v0.5.0 Config Hot Update
 
 完成内容：

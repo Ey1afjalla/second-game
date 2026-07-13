@@ -2,7 +2,7 @@
 
 面向“游戏运营 / AI Agent 工程师”岗位的 AI LiveOps 作品集项目。
 
-当前已经完成 Web MVP、NPC Agent 雏形、运营数据后台、AI 运营 Agent 和配置热更新工作台：
+当前已经完成 Web MVP、NPC Agent 雏形、运营数据后台、AI 运营 Agent、配置热更新工作台和 Tauri 桌面应用骨架：
 
 1. 三天夜市经营循环。
 2. 进货、接待 NPC、销售和收摊结算。
@@ -17,6 +17,7 @@
 11. AI 运营 Agent 基于运营指标生成日报、异常原因假设、行动计划、调参建议和活动配置草案。
 12. 配置工作台支持 schema 校验、人工确认、应用草案、配置历史和回滚。
 13. 应用配置后可以实际影响局内经济，例如首购补贴和偏好商品补货成本。
+14. Tauri 桌面端整合现有游戏、运营后台、AI 工作台和配置工作台。
 
 ## 本地运行
 
@@ -31,10 +32,23 @@ npm run dev
 npm run build
 ```
 
+## 桌面端
+
+```bash
+npm run desktop:dev
+npm run desktop:build
+```
+
+Windows 安装包生成位置：
+
+```text
+src-tauri/target/release/bundle/nsis/AI LiveOps Night Market_0.6.0_x64-setup.exe
+```
+
 ## 当前版本
 
 ```text
-v0.5.0-config-hot-update
+v0.6.0-tauri-desktop
 ```
 
 ## 版本管理
