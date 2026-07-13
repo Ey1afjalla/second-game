@@ -9,11 +9,13 @@ import {
   RotateCcw,
   Sparkles,
   Store,
+  UserRoundCog,
   TrendingUp,
 } from 'lucide-react';
 
 type ProductId = 'moonCake' | 'spiritTea' | 'paperLantern' | 'foxMask' | 'rainBell';
 type Tab = 'game' | 'ops' | 'agent' | 'config';
+type NpcId = 'aqing' | 'umbrellaGranny' | 'foxBoy' | 'nightWatch' | 'lanternSmith';
 
 type Product = {
   id: ProductId;
@@ -25,18 +27,37 @@ type Product = {
 };
 
 type Npc = {
+  id: NpcId;
   name: string;
   role: string;
-  mood: string;
+  baseMood: string;
   budget: number;
   favorite: ProductId;
+  dislikes: ProductId[];
+  memoryHook: string;
   quote: string;
   avatar: string;
 };
 
+type NpcMemory = {
+  affinity: number;
+  visits: number;
+  lastBought?: string;
+  lastFeedback: string;
+  mood: string;
+};
+
+type AgentTrace = {
+  day: number;
+  npcName: string;
+  tools: string[];
+  decision: string;
+  guardrail: string;
+};
+
 type GameEvent = {
   day: number;
-  type: 'buy_stock' | 'npc_visit' | 'sale' | 'missed_sale' | 'day_end' | 'reset';
+  type: 'buy_stock' | 'npc_visit' | 'sale' | 'missed_sale' | 'npc_memory' | 'day_end' | 'reset';
   label: string;
   value: number;
 };
@@ -53,6 +74,8 @@ type GameState = {
   revenue: number;
   currentNpcIndex: number;
   lastMessage: string;
+  npcMemories: Record<NpcId, NpcMemory>;
+  agentTraces: AgentTrace[];
   completed: boolean;
 };
 
@@ -66,47 +89,62 @@ const initialProducts: Product[] = [
 
 const npcs: Npc[] = [
   {
+    id: 'aqing',
     name: '阿青',
     role: '赶夜路的学生',
-    mood: '紧张',
+    baseMood: '紧张',
     budget: 16,
     favorite: 'spiritTea',
+    dislikes: ['foxMask'],
+    memoryHook: '会记住老板有没有在雾夜里帮他稳住心神。',
     quote: '我总觉得身后有人，来杯能醒神的东西吧。',
     avatar: '青',
   },
   {
+    id: 'umbrellaGranny',
     name: '灰伞婆婆',
     role: '雨巷常客',
-    mood: '挑剔',
+    baseMood: '挑剔',
     budget: 14,
     favorite: 'rainBell',
+    dislikes: ['paperLantern'],
+    memoryHook: '会记住摊主是否尊重她对铃声的讲究。',
     quote: '铃声要清，不然夜里的路会走偏。',
     avatar: '伞',
   },
   {
+    id: 'foxBoy',
     name: '狐面少年',
     role: '节庆演员',
-    mood: '兴奋',
+    baseMood: '兴奋',
     budget: 26,
     favorite: 'foxMask',
+    dislikes: ['moonCake'],
+    memoryHook: '会记住摊主有没有理解他的表演欲。',
     quote: '老板，有没有戴上就不像自己的面具？',
     avatar: '狐',
   },
   {
+    id: 'nightWatch',
     name: '巡夜人',
     role: '街口守夜者',
-    mood: '疲惫',
+    baseMood: '疲惫',
     budget: 18,
     favorite: 'moonCake',
+    dislikes: ['rainBell'],
+    memoryHook: '会记住摊主是否给过他能撑过长夜的东西。',
     quote: '今晚雾重，甜一点的东西能稳住心。',
     avatar: '巡',
   },
   {
+    id: 'lanternSmith',
     name: '灯纸匠',
     role: '手艺人',
-    mood: '温和',
+    baseMood: '温和',
     budget: 15,
     favorite: 'paperLantern',
+    dislikes: ['spiritTea'],
+    memoryHook: '会记住摊主是否懂灯纸和手艺的价值。',
     quote: '好灯不怕风，怕的是没人点它。',
     avatar: '灯',
   },
@@ -117,6 +155,14 @@ const dayGoals = [
   '让满意度保持 62 以上，并完成 3 次接待',
   '卖出至少 4 件商品，声望达到 12',
 ];
+
+const initialNpcMemories: Record<NpcId, NpcMemory> = {
+  aqing: { affinity: 0, visits: 0, mood: '紧张', lastFeedback: '还没有和摊主真正打过交道。' },
+  umbrellaGranny: { affinity: 0, visits: 0, mood: '挑剔', lastFeedback: '还在观察这家摊子的规矩。' },
+  foxBoy: { affinity: 0, visits: 0, mood: '兴奋', lastFeedback: '想看看摊主懂不懂节庆。' },
+  nightWatch: { affinity: 0, visits: 0, mood: '疲惫', lastFeedback: '只希望今晚别再白跑一趟。' },
+  lanternSmith: { affinity: 0, visits: 0, mood: '温和', lastFeedback: '愿意给新摊主一点耐心。' },
+};
 
 const makeInitialState = (): GameState => ({
   day: 1,
@@ -130,6 +176,8 @@ const makeInitialState = (): GameState => ({
   revenue: 0,
   currentNpcIndex: 0,
   lastMessage: '夜市刚亮灯。先补一点货，再接待第一位客人。',
+  npcMemories: initialNpcMemories,
+  agentTraces: [],
   completed: false,
 });
 
@@ -139,11 +187,60 @@ function appendEvent(state: GameState, event: GameEvent): GameState {
   return { ...state, events: [...state.events, event] };
 }
 
+function chooseProductForNpc(npc: Npc, memory: NpcMemory, products: Product[]) {
+  const favorite = products.find((item) => item.id === npc.favorite);
+  const fallback = products
+    .filter((item) => item.stock > 0 && item.price <= npc.budget && !npc.dislikes.includes(item.id))
+    .sort((a, b) => b.charm + b.price / 10 - (a.charm + a.price / 10))[0];
+  const forgivingFallback = products
+    .filter((item) => item.stock > 0 && item.price <= npc.budget)
+    .sort((a, b) => b.charm - a.charm)[0];
+  const trustsOwner = memory.affinity >= 4;
+
+  if (favorite && favorite.stock > 0 && favorite.price <= npc.budget) {
+    return { chosen: favorite, reason: '命中偏好商品' };
+  }
+
+  if (fallback) {
+    return { chosen: fallback, reason: trustsOwner ? '基于历史好感接受替代推荐' : '选择预算内高魅力替代品' };
+  }
+
+  if (trustsOwner && forgivingFallback) {
+    return { chosen: forgivingFallback, reason: '因过往好感接受一次不完美推荐' };
+  }
+
+  return { chosen: undefined, reason: '库存、价格或厌恶偏好导致无法成交' };
+}
+
+function buildNpcDialogue(npc: Npc, memory: NpcMemory, product: Product | undefined, liked: boolean, reason: string) {
+  if (!product) {
+    return `${npc.name}看了看摊位：${memory.visits > 0 ? `上次我记得你说过，${memory.lastFeedback}` : npc.quote} 可今晚还是没有合适的。`;
+  }
+
+  if (memory.visits > 0 && liked) {
+    return `${npc.name}认出了摊主：还记得我吧？${memory.lastFeedback} 这次的${product.name}正合适。`;
+  }
+
+  if (liked) {
+    return `${npc.name}低声说：${npc.quote} 这份${product.name}来得正好。`;
+  }
+
+  return `${npc.name}想了想：${reason}，那就先试试${product.name}。`;
+}
+
+function nextMood(baseMood: string, affinity: number, sold: boolean) {
+  if (!sold) return affinity > 0 ? '失望' : '疏离';
+  if (affinity >= 6) return '信任';
+  if (affinity >= 3) return '熟络';
+  return baseMood;
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('game');
   const [game, setGame] = useState<GameState>(makeInitialState);
 
   const currentNpc = npcs[game.currentNpcIndex % npcs.length];
+  const currentMemory = game.npcMemories[currentNpc.id];
   const metrics = useMemo(() => buildMetrics(game), [game]);
   const report = useMemo(() => buildAgentReport(game, metrics), [game, metrics]);
 
@@ -175,11 +272,8 @@ function App() {
     setGame((state) => {
       if (state.completed) return state;
       const npc = npcs[state.currentNpcIndex % npcs.length];
-      const favorite = state.products.find((item) => item.id === npc.favorite);
-      const fallback = state.products
-        .filter((item) => item.stock > 0 && item.price <= npc.budget)
-        .sort((a, b) => b.charm - a.charm)[0];
-      const chosen = favorite && favorite.stock > 0 && favorite.price <= npc.budget ? favorite : fallback;
+      const memory = state.npcMemories[npc.id];
+      const { chosen, reason } = chooseProductForNpc(npc, memory, state.products);
 
       const visited = appendEvent(
         {
@@ -191,12 +285,33 @@ function App() {
       );
 
       if (!chosen) {
+        const nextMemory: NpcMemory = {
+          ...memory,
+          visits: memory.visits + 1,
+          affinity: Math.max(-3, memory.affinity - 2),
+          mood: nextMood(npc.baseMood, memory.affinity - 2, false),
+          lastFeedback: '这次没有买到合适的东西，开始怀疑摊主是否懂他的需求。',
+        };
+        const dialogue = buildNpcDialogue(npc, memory, undefined, false, reason);
+        const trace: AgentTrace = {
+          day: state.day,
+          npcName: npc.name,
+          tools: [
+            `read_inventory: ${state.products.map((item) => `${item.name}x${item.stock}`).join(', ')}`,
+            `read_prices: ${state.products.map((item) => `${item.name}:${item.price}`).join(', ')}`,
+            `read_npc_memory: visits=${memory.visits}, affinity=${memory.affinity}, mood=${memory.mood}`,
+          ],
+          decision: reason,
+          guardrail: '规则系统只允许扣减满意度和声望，Agent 对话不能直接改写关键数值。',
+        };
         return appendEvent(
           {
             ...visited,
             satisfaction: Math.max(0, visited.satisfaction - 6),
             reputation: Math.max(0, visited.reputation - 1),
-            lastMessage: `${npc.name}摇摇头：今晚没有合适的东西。满意度 -6，声望 -1。`,
+            npcMemories: { ...visited.npcMemories, [npc.id]: nextMemory },
+            agentTraces: [...visited.agentTraces, trace],
+            lastMessage: `${dialogue} 满意度 -6，声望 -1。`,
           },
           { day: state.day, type: 'missed_sale', label: npc.name, value: -1 },
         );
@@ -205,11 +320,35 @@ function App() {
       const liked = chosen.id === npc.favorite;
       const satisfactionDelta = liked ? 8 : 3;
       const reputationDelta = liked ? 3 : 1;
+      const affinityDelta = liked ? 3 : npc.dislikes.includes(chosen.id) ? -1 : 1;
+      const nextAffinity = Math.max(-3, Math.min(10, memory.affinity + affinityDelta));
+      const dialogue = buildNpcDialogue(npc, memory, chosen, liked, reason);
+      const nextMemory: NpcMemory = {
+        affinity: nextAffinity,
+        visits: memory.visits + 1,
+        lastBought: chosen.name,
+        lastFeedback: liked
+          ? `上次买到${chosen.name}，觉得摊主抓住了自己的偏好。`
+          : `上次接受了${chosen.name}，但仍希望下次能看到更贴合自己的东西。`,
+        mood: nextMood(npc.baseMood, nextAffinity, true),
+      };
+      const trace: AgentTrace = {
+        day: state.day,
+        npcName: npc.name,
+        tools: [
+          `read_inventory: ${state.products.map((item) => `${item.name}x${item.stock}`).join(', ')}`,
+          `read_prices: ${state.products.map((item) => `${item.name}:${item.price}`).join(', ')}`,
+          `read_npc_memory: visits=${memory.visits}, affinity=${memory.affinity}, mood=${memory.mood}`,
+          `read_task_state: day=${state.day}, goal=${dayGoals[state.day - 1]}`,
+        ],
+        decision: `${reason}，推荐 ${chosen.name}`,
+        guardrail: '购买结果由库存、预算、偏好和规则校验确认，Agent 只生成解释和推荐理由。',
+      };
       const nextProducts = visited.products.map((item) =>
         item.id === chosen.id ? { ...item, stock: item.stock - 1 } : item,
       );
 
-      return appendEvent(
+      const sold = appendEvent(
         {
           ...visited,
           coins: visited.coins + chosen.price,
@@ -218,10 +357,14 @@ function App() {
           products: nextProducts,
           sales: visited.sales + 1,
           revenue: visited.revenue + chosen.price,
-          lastMessage: `${npc.name}买走了${chosen.name}。${liked ? '正中喜好' : '虽然不是最爱，但还算满意'}，满意度 ${formatSigned(satisfactionDelta)}，声望 ${formatSigned(reputationDelta)}。`,
+          npcMemories: { ...visited.npcMemories, [npc.id]: nextMemory },
+          agentTraces: [...visited.agentTraces, trace],
+          lastMessage: `${dialogue} 满意度 ${formatSigned(satisfactionDelta)}，声望 ${formatSigned(reputationDelta)}，好感 ${formatSigned(affinityDelta)}。`,
         },
         { day: state.day, type: 'sale', label: chosen.name, value: chosen.price },
       );
+
+      return appendEvent(sold, { day: state.day, type: 'npc_memory', label: `${npc.name} 好感`, value: affinityDelta });
     });
   };
 
@@ -319,9 +462,19 @@ function App() {
               <div>
                 <p className="eyebrow">下一位顾客</p>
                 <h2>{currentNpc.name}</h2>
-                <p>{currentNpc.role} · {currentNpc.mood} · 预算 {currentNpc.budget}</p>
+                <p>{currentNpc.role} · {currentMemory.mood} · 预算 {currentNpc.budget}</p>
                 <blockquote>{currentNpc.quote}</blockquote>
               </div>
+            </div>
+
+            <div className="memory-card">
+              <div>
+                <UserRoundCog size={18} />
+                <span>NPC 记忆</span>
+              </div>
+              <p>{currentNpc.memoryHook}</p>
+              <strong>好感 {currentMemory.affinity} · 到访 {currentMemory.visits} 次</strong>
+              <small>{currentMemory.lastFeedback}</small>
             </div>
 
             <div className="message-box">
@@ -364,7 +517,7 @@ function App() {
       )}
 
       {activeTab === 'ops' && <OpsDashboard game={game} metrics={metrics} />}
-      {activeTab === 'agent' && <AgentDesk report={report} game={game} />}
+      {activeTab === 'agent' && <AgentDesk report={report} game={game} npcs={npcs} />}
       {activeTab === 'config' && <ConfigView products={game.products} />}
     </main>
   );
@@ -458,7 +611,9 @@ function OpsDashboard({ game, metrics }: { game: GameState; metrics: ReturnType<
   );
 }
 
-function AgentDesk({ report, game }: { report: ReturnType<typeof buildAgentReport>; game: GameState }) {
+function AgentDesk({ report, game, npcs }: { report: ReturnType<typeof buildAgentReport>; game: GameState; npcs: Npc[] }) {
+  const latestTrace = game.agentTraces[game.agentTraces.length - 1];
+
   return (
     <section className="agent-layout">
       <div className="panel agent-report">
@@ -475,7 +630,39 @@ function AgentDesk({ report, game }: { report: ReturnType<typeof buildAgentRepor
         <h2>Agent 工具调用轨迹</h2>
         <p><span>读取玩家数据</span><strong>{game.events.length} 条事件</strong></p>
         <p><span>读取商品配置</span><strong>{game.products.length} 个商品</strong></p>
+        <p><span>读取 NPC 记忆</span><strong>{Object.keys(game.npcMemories).length} 个角色</strong></p>
         <p><span>生成活动草案</span><strong>等待人工确认</strong></p>
+      </div>
+      <div className="panel npc-agent-card">
+        <h2>最近 NPC Agent 决策</h2>
+        {latestTrace ? (
+          <>
+            <p><span>顾客</span><strong>{latestTrace.npcName}</strong></p>
+            <p><span>决策</span><strong>{latestTrace.decision}</strong></p>
+            <p><span>边界</span><strong>{latestTrace.guardrail}</strong></p>
+            <ul>
+              {latestTrace.tools.map((tool) => (
+                <li key={tool}>{tool}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p>接待第一位顾客后，这里会显示 NPC Agent 的工具读取和决策过程。</p>
+        )}
+      </div>
+      <div className="panel memory-ledger">
+        <h2>NPC 记忆账本</h2>
+        {npcs.map((npc) => {
+          const memory = game.npcMemories[npc.id];
+          return (
+            <p key={npc.id}>
+              <span>{npc.name}</span>
+              <strong>好感 {memory.affinity}</strong>
+              <em>{memory.mood}</em>
+              <small>{memory.lastBought ? `上次购买 ${memory.lastBought}` : memory.lastFeedback}</small>
+            </p>
+          );
+        })}
       </div>
       <pre className="config-code">{JSON.stringify(report.configDraft, null, 2)}</pre>
     </section>
@@ -484,9 +671,13 @@ function AgentDesk({ report, game }: { report: ReturnType<typeof buildAgentRepor
 
 function ConfigView({ products }: { products: Product[] }) {
   const config = {
-    version: 'web-mvp-0.1.0',
+    version: 'agent-npc-0.2.0',
     maxDays: 3,
     products: products.map(({ id, name, cost, price, charm }) => ({ id, name, cost, price, charm })),
+    npcMemory: {
+      enabled: true,
+      fields: ['affinity', 'visits', 'mood', 'lastBought', 'lastFeedback'],
+    },
     guardrails: ['AI can suggest config drafts', 'Schema validation required', 'Human approval required before applying'],
   };
 

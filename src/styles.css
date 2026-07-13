@@ -234,6 +234,7 @@ h3 {
 .product-card,
 .stat-card,
 .message-box,
+.memory-card,
 .goal-strip,
 .config-code {
   background: #fffefb;
@@ -328,6 +329,36 @@ blockquote {
 
 .message-box p {
   margin-bottom: 0;
+}
+
+.memory-card {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+}
+
+.memory-card div {
+  align-items: center;
+  color: #467b6a;
+  display: flex;
+  font-size: 12px;
+  font-weight: 900;
+  gap: 8px;
+}
+
+.memory-card p {
+  color: #4f5f62;
+  margin-bottom: 0;
+}
+
+.memory-card strong,
+.memory-card small {
+  display: block;
+}
+
+.memory-card small {
+  color: #7a6658;
+  line-height: 1.5;
 }
 
 .actions {
@@ -467,11 +498,11 @@ blockquote {
 }
 
 .agent-layout {
-  grid-template-columns: minmax(420px, 1fr) minmax(320px, 0.78fr);
+  grid-template-columns: minmax(420px, 1fr) minmax(340px, 0.82fr);
 }
 
 .agent-report {
-  grid-row: span 2;
+  grid-row: span 3;
 }
 
 .agent-report p {
@@ -481,6 +512,49 @@ blockquote {
 .tool-trace p {
   grid-template-columns: 1fr auto;
   margin-bottom: 8px;
+}
+
+.npc-agent-card p,
+.memory-ledger p {
+  background: #f7f8f3;
+  border: 1px solid #e1e6dc;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+}
+
+.npc-agent-card p {
+  grid-template-columns: 72px 1fr;
+}
+
+.npc-agent-card ul {
+  color: #53666a;
+  line-height: 1.7;
+  margin: 10px 0 0;
+  padding-left: 20px;
+}
+
+.npc-agent-card span,
+.memory-ledger span {
+  color: #597168;
+  font-weight: 800;
+}
+
+.npc-agent-card strong,
+.memory-ledger strong {
+  color: #22313b;
+}
+
+.memory-ledger p {
+  grid-template-columns: 80px 80px 64px 1fr;
+}
+
+.memory-ledger em,
+.memory-ledger small {
+  color: #5e6465;
+  font-style: normal;
 }
 
 .config-code {
@@ -538,6 +612,8 @@ blockquote {
   }
 
   .npc-panel,
+  .npc-agent-card p,
+  .memory-ledger p,
   .event-table p {
     grid-template-columns: 1fr;
   }
