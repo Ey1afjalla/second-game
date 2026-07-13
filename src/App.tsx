@@ -8,9 +8,11 @@ import {
   Coins,
   FlaskConical,
   Lightbulb,
+  History,
   MessageSquareText,
   PackageSearch,
   RotateCcw,
+  ShieldCheck,
   Sparkles,
   Store,
   SlidersHorizontal,
@@ -60,9 +62,44 @@ type AgentTrace = {
   guardrail: string;
 };
 
+type TuningSuggestion = {
+  key: string;
+  before: string | number;
+  after: string | number;
+  reason: string;
+};
+
+type ActivityConfigDraft = {
+  activityId: string;
+  target: string;
+  segment: string;
+  trigger: string;
+  bonus: string;
+  tuning: TuningSuggestion[];
+  expectedImpact: {
+    conversionLift: string;
+    retentionScore: number;
+  };
+  guardrail: string;
+};
+
+type LiveOpsConfig = {
+  version: string;
+  status: 'draft' | 'approved' | 'applied' | 'rolled_back';
+  activity: ActivityConfigDraft;
+  appliedAt?: string;
+  rollbackFrom?: string;
+};
+
+type ConfigValidation = {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+};
+
 type GameEvent = {
   day: number;
-  type: 'buy_stock' | 'npc_visit' | 'sale' | 'missed_sale' | 'npc_memory' | 'day_end' | 'reset';
+  type: 'buy_stock' | 'npc_visit' | 'sale' | 'missed_sale' | 'npc_memory' | 'config_apply' | 'config_rollback' | 'day_end' | 'reset';
   label: string;
   value: number;
 };
@@ -81,6 +118,8 @@ type GameState = {
   lastMessage: string;
   npcMemories: Record<NpcId, NpcMemory>;
   agentTraces: AgentTrace[];
+  activeConfig: LiveOpsConfig;
+  configHistory: LiveOpsConfig[];
   completed: boolean;
 };
 
@@ -169,6 +208,34 @@ const initialNpcMemories: Record<NpcId, NpcMemory> = {
   lanternSmith: { affinity: 0, visits: 0, mood: '温和', lastFeedback: '愿意给新摊主一点耐心。' },
 };
 
+const baselineActivity: ActivityConfigDraft = {
+  activityId: 'baseline-night-market',
+  target: '保持基础经营循环稳定',
+  segment: 'all_players',
+  trigger: 'new_game_start',
+  bonus: '无额外补贴',
+  tuning: [
+    {
+      key: 'preferred_item_restock_priority',
+      before: 'manual',
+      after: 'normal',
+      reason: '基础版本使用手动补货。',
+    },
+  ],
+  expectedImpact: {
+    conversionLift: 'baseline',
+    retentionScore: 0,
+  },
+  guardrail: '基线配置不改变局内数值。',
+};
+
+const baselineConfig: LiveOpsConfig = {
+  version: 'baseline-0.0.0',
+  status: 'applied',
+  activity: baselineActivity,
+  appliedAt: 'game_start',
+};
+
 const makeInitialState = (): GameState => ({
   day: 1,
   coins: 56,
@@ -183,6 +250,8 @@ const makeInitialState = (): GameState => ({
   lastMessage: '夜市刚亮灯。先补一点货，再接待第一位客人。',
   npcMemories: initialNpcMemories,
   agentTraces: [],
+  activeConfig: baselineConfig,
+  configHistory: [baselineConfig],
   completed: false,
 });
 
@@ -190,6 +259,59 @@ const formatSigned = (value: number) => (value > 0 ? `+${value}` : `${value}`);
 
 function appendEvent(state: GameState, event: GameEvent): GameState {
   return { ...state, events: [...state.events, event] };
+}
+
+function getConfigTuning(config: LiveOpsConfig, key: string) {
+  return config.activity.tuning.find((item) => item.key === key)?.after;
+}
+
+function getRestockCost(product: Product, activeConfig: LiveOpsConfig) {
+  const priority = getConfigTuning(activeConfig, 'preferred_item_restock_priority');
+  const isPreferred = npcs.some((npc) => npc.favorite === product.id);
+
+  if (priority === 'high' && isPreferred) {
+    return Math.max(1, product.cost - 1);
+  }
+
+  return product.cost;
+}
+
+function getFirstPurchaseSubsidy(activeConfig: LiveOpsConfig, sales: number) {
+  const subsidy = Number(getConfigTuning(activeConfig, 'first_purchase_subsidy') ?? 0);
+  return sales === 0 && Number.isFinite(subsidy) ? subsidy : 0;
+}
+
+function validateActivityConfig(draft: ActivityConfigDraft): ConfigValidation {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (!draft.activityId.trim()) errors.push('activityId 不能为空。');
+  if (!draft.target.trim()) errors.push('target 不能为空。');
+  if (!draft.segment.trim()) errors.push('segment 不能为空。');
+  if (!draft.trigger.trim()) errors.push('trigger 不能为空。');
+  if (!draft.guardrail.includes('人工确认')) errors.push('guardrail 必须明确人工确认。');
+  if (!Array.isArray(draft.tuning) || draft.tuning.length === 0) errors.push('至少需要 1 条 tuning 建议。');
+
+  draft.tuning.forEach((item) => {
+    if (!item.key.trim()) errors.push('tuning.key 不能为空。');
+    if (item.after === '') errors.push(`${item.key} 的 after 不能为空。`);
+  });
+
+  if (!draft.expectedImpact.conversionLift) warnings.push('缺少转化预期说明。');
+  if (draft.expectedImpact.retentionScore < 0 || draft.expectedImpact.retentionScore > 100) {
+    warnings.push('留存评分应在 0 到 100 之间。');
+  }
+
+  return { valid: errors.length === 0, errors, warnings };
+}
+
+function createConfigFromDraft(draft: ActivityConfigDraft, status: LiveOpsConfig['status']): LiveOpsConfig {
+  return {
+    version: `${draft.activityId}-${status}`,
+    status,
+    activity: draft,
+    appliedAt: status === 'applied' ? new Date().toLocaleString('zh-CN') : undefined,
+  };
 }
 
 function chooseProductForNpc(npc: Npc, memory: NpcMemory, products: Product[]) {
@@ -253,7 +375,8 @@ function App() {
     setGame((state) => {
       if (state.completed) return state;
       const product = state.products.find((item) => item.id === productId);
-      if (!product || state.coins < product.cost) {
+      const restockCost = product ? getRestockCost(product, state.activeConfig) : 0;
+      if (!product || state.coins < restockCost) {
         return { ...state, lastMessage: '铜钱不够，今晚只能精打细算。' };
       }
 
@@ -264,11 +387,11 @@ function App() {
       return appendEvent(
         {
           ...state,
-          coins: state.coins - product.cost,
+          coins: state.coins - restockCost,
           products: nextProducts,
-          lastMessage: `补进 1 件${product.name}，成本 ${product.cost}。`,
+          lastMessage: `补进 1 件${product.name}，成本 ${restockCost}。${restockCost < product.cost ? '当前活动配置降低了偏好商品补货成本。' : ''}`,
         },
-        { day: state.day, type: 'buy_stock', label: product.name, value: -product.cost },
+        { day: state.day, type: 'buy_stock', label: product.name, value: -restockCost },
       );
     });
   };
@@ -325,6 +448,7 @@ function App() {
       const liked = chosen.id === npc.favorite;
       const satisfactionDelta = liked ? 8 : 3;
       const reputationDelta = liked ? 3 : 1;
+      const subsidy = getFirstPurchaseSubsidy(state.activeConfig, state.sales);
       const affinityDelta = liked ? 3 : npc.dislikes.includes(chosen.id) ? -1 : 1;
       const nextAffinity = Math.max(-3, Math.min(10, memory.affinity + affinityDelta));
       const dialogue = buildNpcDialogue(npc, memory, chosen, liked, reason);
@@ -356,17 +480,17 @@ function App() {
       const sold = appendEvent(
         {
           ...visited,
-          coins: visited.coins + chosen.price,
+          coins: visited.coins + chosen.price + subsidy,
           reputation: visited.reputation + reputationDelta,
           satisfaction: Math.min(100, visited.satisfaction + satisfactionDelta),
           products: nextProducts,
           sales: visited.sales + 1,
-          revenue: visited.revenue + chosen.price,
+          revenue: visited.revenue + chosen.price + subsidy,
           npcMemories: { ...visited.npcMemories, [npc.id]: nextMemory },
           agentTraces: [...visited.agentTraces, trace],
-          lastMessage: `${dialogue} 满意度 ${formatSigned(satisfactionDelta)}，声望 ${formatSigned(reputationDelta)}，好感 ${formatSigned(affinityDelta)}。`,
+          lastMessage: `${dialogue} 满意度 ${formatSigned(satisfactionDelta)}，声望 ${formatSigned(reputationDelta)}，好感 ${formatSigned(affinityDelta)}。${subsidy ? `活动补贴 +${subsidy} 铜钱。` : ''}`,
         },
-        { day: state.day, type: 'sale', label: chosen.name, value: chosen.price },
+        { day: state.day, type: 'sale', label: chosen.name, value: chosen.price + subsidy },
       );
 
       return appendEvent(sold, { day: state.day, type: 'npc_memory', label: `${npc.name} 好感`, value: affinityDelta });
@@ -403,6 +527,52 @@ function App() {
   };
 
   const resetGame = () => setGame(makeInitialState());
+
+  const applyConfigDraft = () => {
+    setGame((state) => {
+      const validation = validateActivityConfig(report.configDraft);
+      if (!validation.valid) {
+        return {
+          ...state,
+          lastMessage: `配置校验失败：${validation.errors.join(' ')}`,
+        };
+      }
+
+      const appliedConfig = createConfigFromDraft(report.configDraft, 'applied');
+      const nextState = {
+        ...state,
+        activeConfig: appliedConfig,
+        configHistory: [...state.configHistory, appliedConfig],
+        lastMessage: `活动配置 ${report.configDraft.activityId} 已人工确认并应用。`,
+      };
+
+      return appendEvent(nextState, { day: state.day, type: 'config_apply', label: report.configDraft.activityId, value: 1 });
+    });
+  };
+
+  const rollbackConfig = () => {
+    setGame((state) => {
+      if (state.configHistory.length <= 1) {
+        return { ...state, lastMessage: '当前已经是基线配置，无需回滚。' };
+      }
+
+      const previousConfig = state.configHistory[state.configHistory.length - 2];
+      const rollbackRecord: LiveOpsConfig = {
+        ...previousConfig,
+        status: 'rolled_back',
+        rollbackFrom: state.activeConfig.version,
+        appliedAt: new Date().toLocaleString('zh-CN'),
+      };
+      const nextState = {
+        ...state,
+        activeConfig: previousConfig,
+        configHistory: [...state.configHistory, rollbackRecord],
+        lastMessage: `已从 ${state.activeConfig.version} 回滚到 ${previousConfig.version}。`,
+      };
+
+      return appendEvent(nextState, { day: state.day, type: 'config_rollback', label: previousConfig.version, value: -1 });
+    });
+  };
 
   return (
     <main className="app-shell">
@@ -523,7 +693,16 @@ function App() {
 
       {activeTab === 'ops' && <OpsDashboard game={game} metrics={metrics} />}
       {activeTab === 'agent' && <AgentDesk report={report} game={game} npcs={npcs} />}
-      {activeTab === 'config' && <ConfigView products={game.products} />}
+      {activeTab === 'config' && (
+        <ConfigView
+          products={game.products}
+          report={report}
+          activeConfig={game.activeConfig}
+          configHistory={game.configHistory}
+          onApplyDraft={applyConfigDraft}
+          onRollback={rollbackConfig}
+        />
+      )}
     </main>
   );
 }
@@ -971,9 +1150,24 @@ function AgentDesk({ report, game, npcs }: { report: ReturnType<typeof buildAgen
   );
 }
 
-function ConfigView({ products }: { products: Product[] }) {
+function ConfigView({
+  products,
+  report,
+  activeConfig,
+  configHistory,
+  onApplyDraft,
+  onRollback,
+}: {
+  products: Product[];
+  report: ReturnType<typeof buildAgentReport>;
+  activeConfig: LiveOpsConfig;
+  configHistory: LiveOpsConfig[];
+  onApplyDraft: () => void;
+  onRollback: () => void;
+}) {
+  const validation = validateActivityConfig(report.configDraft);
   const config = {
-    version: 'ai-ops-agent-0.4.0',
+    version: 'config-hot-update-0.5.0',
     maxDays: 3,
     analytics: {
       eventDriven: true,
@@ -989,15 +1183,71 @@ function ConfigView({ products }: { products: Product[] }) {
       enabled: true,
       fields: ['affinity', 'visits', 'mood', 'lastBought', 'lastFeedback'],
     },
-    guardrails: ['AI can suggest config drafts', 'Schema validation required', 'Human approval required before applying'],
+    liveOpsConfig: {
+      activeVersion: activeConfig.version,
+      historyCount: configHistory.length,
+      schemaValidation: validation.valid ? 'passed' : 'failed',
+      rollbackSupported: true,
+    },
+    guardrails: ['AI can suggest config drafts', 'Schema validation required', 'Human approval required before applying', 'Rollback required for applied config'],
   };
 
   return (
-    <section className="config-layout">
-      <div className="panel">
-        <h2>配置驱动草案</h2>
-        <p>第一版先展示结构化配置，后续会接入 schema 校验、配置历史和回滚。</p>
+    <section className="config-workspace">
+      <div className="panel config-summary">
+        <p className="eyebrow">LiveOps Config</p>
+        <h2>配置热更新工作台</h2>
+        <p>AI 可以生成活动配置草案；草案必须通过 schema 校验和人工确认，才能影响当前局内经济。</p>
+        <div className="config-actions">
+          <button className="primary" onClick={onApplyDraft} disabled={!validation.valid}>
+            <ShieldCheck size={18} />
+            应用草案
+          </button>
+          <button onClick={onRollback}>
+            <History size={18} />
+            回滚配置
+          </button>
+        </div>
       </div>
+
+      <div className="panel validation-panel">
+        <h2>Schema 校验</h2>
+        <strong className={validation.valid ? 'valid' : 'invalid'}>{validation.valid ? '通过' : '失败'}</strong>
+        {validation.errors.length > 0 && validation.errors.map((item) => <p key={item}>{item}</p>)}
+        {validation.warnings.length > 0 && validation.warnings.map((item) => <p key={item}>{item}</p>)}
+        {validation.errors.length === 0 && validation.warnings.length === 0 && <p>配置结构完整，等待人工确认。</p>}
+      </div>
+
+      <div className="panel active-config">
+        <h2>当前生效配置</h2>
+        <p><span>版本</span><strong>{activeConfig.version}</strong></p>
+        <p><span>状态</span><strong>{activeConfig.status}</strong></p>
+        <p><span>活动</span><strong>{activeConfig.activity.activityId}</strong></p>
+        <p><span>奖励</span><strong>{activeConfig.activity.bonus}</strong></p>
+      </div>
+
+      <div className="panel draft-panel">
+        <h2>AI 活动配置草案</h2>
+        <p><span>活动 ID</span><strong>{report.configDraft.activityId}</strong></p>
+        <p><span>目标</span><strong>{report.configDraft.target}</strong></p>
+        <p><span>触发</span><strong>{report.configDraft.trigger}</strong></p>
+        <p><span>奖励</span><strong>{report.configDraft.bonus}</strong></p>
+      </div>
+
+      <div className="panel config-history">
+        <h2>配置历史</h2>
+        {configHistory.slice().reverse().map((item, index) => (
+          <article key={`${item.version}-${index}`}>
+            <div>
+              <strong>{item.version}</strong>
+              <span>{item.status}</span>
+            </div>
+            <p>{item.activity.target}</p>
+            <small>{item.appliedAt ?? '未应用'}{item.rollbackFrom ? ` · rollback from ${item.rollbackFrom}` : ''}</small>
+          </article>
+        ))}
+      </div>
+
       <pre className="config-code">{JSON.stringify(config, null, 2)}</pre>
     </section>
   );

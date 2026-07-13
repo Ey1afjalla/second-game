@@ -418,7 +418,8 @@ blockquote {
 
 .dashboard-layout,
 .agent-layout,
-.config-layout {
+.config-layout,
+.config-workspace {
   display: grid;
   gap: 16px;
 }
@@ -871,6 +872,130 @@ blockquote {
   grid-template-columns: 320px 1fr;
 }
 
+.config-workspace {
+  grid-template-columns: minmax(300px, 0.8fr) minmax(360px, 1fr);
+}
+
+.config-workspace .config-code,
+.config-history {
+  grid-column: 1 / -1;
+}
+
+.config-summary p {
+  color: #4f5f62;
+}
+
+.config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.config-actions button {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.config-actions .primary {
+  background: #255b66;
+  border-color: #255b66;
+  color: #fffefb;
+}
+
+.validation-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.validation-panel strong {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 13px;
+  justify-content: center;
+  padding: 6px 10px;
+  width: fit-content;
+}
+
+.validation-panel .valid {
+  background: #e6f0eb;
+  color: #347568;
+}
+
+.validation-panel .invalid {
+  background: #fae8e1;
+  color: #b24a3c;
+}
+
+.validation-panel p,
+.active-config p,
+.draft-panel p {
+  background: #f7f8f3;
+  border: 1px solid #e1e6dc;
+  border-radius: 8px;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.active-config p,
+.draft-panel p {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 72px 1fr;
+}
+
+.active-config span,
+.draft-panel span {
+  color: #597168;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.active-config strong,
+.draft-panel strong {
+  color: #22313b;
+}
+
+.config-history {
+  display: grid;
+  gap: 10px;
+}
+
+.config-history article {
+  background: #f7f8f3;
+  border: 1px solid #e1e6dc;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.config-history article > div {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.config-history span {
+  background: #eef4ee;
+  border-radius: 999px;
+  color: #347568;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+
+.config-history p {
+  color: #4f5f62;
+  margin: 8px 0 4px;
+}
+
+.config-history small {
+  color: #7a6658;
+}
+
 @media (max-width: 980px) {
   .app-shell {
     padding: 16px;
@@ -881,6 +1006,10 @@ blockquote {
   .dashboard-layout,
   .agent-layout,
   .config-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .config-workspace {
     grid-template-columns: 1fr;
   }
 
@@ -912,6 +1041,8 @@ blockquote {
   }
 
   .npc-panel,
+  .active-config p,
+  .draft-panel p,
   .goal-row,
   .npc-agent-card p,
   .memory-ledger p,
