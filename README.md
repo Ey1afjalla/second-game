@@ -40,7 +40,7 @@
 ## 演示材料
 
 1. [演示脚本](docs/DemoScript.md)
-2. [面试讲解材料](docs/InterviewGuide.md)
+2. [讲解材料](docs/InterviewGuide.md)
 3. [架构说明](docs/Architecture.md)
 4. [Agent 设计记录](docs/PromptAndAgentDesign.md)
 5. [创新点记录](docs/InnovationLog.md)
