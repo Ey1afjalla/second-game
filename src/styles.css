@@ -1100,6 +1100,7 @@ blockquote {
 }
 
 .dashboard-layout .kpi-row,
+.ops-export-panel,
 .trend-panel,
 .ab-panel,
 .event-table {
@@ -1108,6 +1109,41 @@ blockquote {
 
 .panel {
   padding: 18px;
+}
+
+.ops-export-panel {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.ops-export-panel p {
+  color: #4f5f62;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.ops-export-panel small {
+  color: #347568;
+  display: block;
+  margin-top: 8px;
+}
+
+.ops-export-panel button {
+  align-items: center;
+  background: #273746;
+  border: 0;
+  border-radius: 8px;
+  color: #fffaf1;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-weight: 800;
+  gap: 8px;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
 }
 
 .bars {
@@ -1745,6 +1781,15 @@ blockquote {
   .topbar {
     align-items: stretch;
     display: grid;
+  }
+
+  .ops-export-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ops-export-panel button {
+    width: 100%;
   }
 
   .inventory,

@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   Coins,
+  FileDown,
   FlaskConical,
   Lightbulb,
   History,
@@ -707,6 +708,64 @@ function exportGameSnapshot(game: GameState, metrics: ReturnType<typeof buildMet
   const link = document.createElement('a');
   link.href = url;
   link.download = `night-market-snapshot-day-${game.day}-${exportedAt.slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportOpsLog(game: GameState, metrics: ReturnType<typeof buildMetrics>, report: ReturnType<typeof buildAgentReport>) {
+  if (typeof document === 'undefined') return;
+
+  const exportedAt = new Date().toISOString();
+  const log = {
+    schema: 'second-game-ops-log',
+    version: 'ops-log-0.1.0',
+    exportedAt,
+    summary: {
+      day: game.day,
+      completed: game.completed,
+      coins: game.coins,
+      reputation: game.reputation,
+      satisfaction: game.satisfaction,
+      visits: game.visits,
+      sales: game.sales,
+      revenue: game.revenue,
+      conversion: metrics.conversion,
+      averageRevenue: metrics.averageRevenue,
+      missed: metrics.missed,
+    },
+    metrics: {
+      dayRevenue: metrics.dayRevenue,
+      goalStats: metrics.goalStats,
+      productStats: metrics.productStats,
+      npcStats: metrics.npcStats,
+      dropoffNodes: metrics.dropoffNodes,
+      abTest: metrics.abTest,
+      productComboActivation: metrics.productComboActivation,
+      rumorForecast: metrics.rumorForecast,
+      achievementProgress: metrics.achievementProgress,
+      eventChoiceRate: metrics.eventChoiceRate,
+    },
+    agentReport: {
+      summary: report.summary,
+      evidence: report.evidence,
+      risk: report.risk,
+      action: report.action,
+      anomalies: report.anomalies,
+      actionPlan: report.actionPlan,
+      tuningSuggestions: report.tuningSuggestions,
+      configDraft: report.configDraft,
+    },
+    events: game.events,
+    agentTraces: game.agentTraces,
+    configHistory: game.configHistory,
+  };
+  const blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `night-market-ops-log-day-${game.day}-${exportedAt.slice(0, 10)}.json`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -1894,7 +1953,7 @@ function App() {
         </section>
       )}
 
-      {activeTab === 'ops' && <OpsDashboard game={game} metrics={metrics} />}
+      {activeTab === 'ops' && <OpsDashboard game={game} metrics={metrics} report={report} />}
       {activeTab === 'agent' && <AgentDesk report={report} game={game} metrics={metrics} npcs={npcs} />}
       {activeTab === 'config' && (
         <ConfigView
@@ -2154,6 +2213,11 @@ function buildAgentReport(game: GameState, metrics: ReturnType<typeof buildMetri
       impact: '面试或复盘前导出本地 JSON，保留事件流、关键指标、Agent 报告和配置草案证据。',
     },
     {
+      title: '导出运营日志证据包',
+      owner: '数据运营',
+      impact: '把事件流、指标摘要、Agent 报告、工具轨迹和配置历史打包为本地 JSON，便于复盘玩法调优链路。',
+    },
+    {
       title: '导入演示快照复现局面',
       owner: '桌面交付',
       impact: '可以从面试前准备好的 JSON 直接恢复到指定经营日，稳定复现高价值事件和 Agent 建议。',
@@ -2233,6 +2297,12 @@ function buildAgentReport(game: GameState, metrics: ReturnType<typeof buildMetri
       reason: '面试演示常需要在多个局面之间切换，多槽位能减少现场重玩成本。',
     },
     {
+      key: 'ops_log_export',
+      before: 'visual_report_only',
+      after: 'downloadable_ops_evidence_json',
+      reason: '运营工程岗位需要能把玩法行为、Agent 建议和配置变更沉淀成可复盘的数据证据。',
+    },
+    {
       key: 'reputation_branch_threshold',
       before: 'low<=3, high>=12',
       after: metrics.reputationBranch.tier === 'low' ? 'add_recovery_task' : 'observe',
@@ -2270,12 +2340,38 @@ function buildAgentReport(game: GameState, metrics: ReturnType<typeof buildMetri
   };
 }
 
-function OpsDashboard({ game, metrics }: { game: GameState; metrics: ReturnType<typeof buildMetrics> }) {
+function OpsDashboard({
+  game,
+  metrics,
+  report,
+}: {
+  game: GameState;
+  metrics: ReturnType<typeof buildMetrics>;
+  report: ReturnType<typeof buildAgentReport>;
+}) {
   const maxRevenue = Math.max(1, ...metrics.dayRevenue.map((item) => item.revenue));
   const winner = metrics.abTest.reduce((best, item) => (item.retentionScore > best.retentionScore ? item : best), metrics.abTest[0]);
+  const [exportMessage, setExportMessage] = useState('');
 
   return (
     <section className="dashboard-layout">
+      <section className="panel ops-export-panel">
+        <div>
+          <p className="eyebrow">Local Ops Log</p>
+          <h2>运营日志导出</h2>
+          <p>导出事件流、指标摘要、Agent 报告、工具轨迹和配置历史，文件只保存在本机。</p>
+          {exportMessage && <small>{exportMessage}</small>}
+        </div>
+        <button
+          onClick={() => {
+            exportOpsLog(game, metrics, report);
+            setExportMessage('已生成本地运营日志 JSON。');
+          }}
+        >
+          <FileDown size={18} />
+          导出运营日志
+        </button>
+      </section>
       <div className="kpi-row">
         <Stat icon={<MessageSquareText size={18} />} label="接待人数" value={game.visits} />
         <Stat icon={<Coins size={18} />} label="总收入" value={game.revenue} />
@@ -2671,6 +2767,12 @@ function ConfigView({
         key: LOCAL_SAVE_SLOTS_KEY,
         maxSlots: MAX_SAVE_SLOTS,
         actions: ['saveCurrentState', 'loadSlot', 'deleteSlot'],
+      },
+      opsLogExport: {
+        enabled: true,
+        schema: 'second-game-ops-log',
+        includes: ['summary', 'metrics', 'agentReport', 'events', 'agentTraces', 'configHistory'],
+        purpose: '导出本地运营复盘日志，便于面试讲解和桌面端日志迁移。',
       },
       desktopMigrationPath: 'Tauri SQLite or local file snapshot',
       purpose: '支持 Web 和桌面壳本地演示，刷新后保留进度，并可导出或导入复盘证据',
