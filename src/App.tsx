@@ -35,6 +35,7 @@ import eventMysteriousOrder from './assets/event-mysterious-order.svg';
 
 type ProductId = 'moonCake' | 'spiritTea' | 'paperLantern' | 'foxMask' | 'rainBell';
 type Tab = 'game' | 'ops' | 'agent' | 'config';
+type GamePanel = 'strategy' | 'event' | 'growth' | 'archive';
 type NpcId = 'aqing' | 'umbrellaGranny' | 'foxBoy' | 'nightWatch' | 'lanternSmith';
 type DesktopMenuAction = 'exportSnapshot' | 'resetDemo' | 'refresh' | 'openGithub';
 
@@ -1232,6 +1233,7 @@ function nextMood(baseMood: string, affinity: number, sold: boolean) {
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('game');
+  const [activeGamePanel, setActiveGamePanel] = useState<GamePanel>('strategy');
   const [initialSavedAt] = useState(() => loadSavedGame()?.savedAt);
   const [game, setGame] = useState<GameState>(() => loadSavedGame()?.game ?? makeInitialState());
   const [saveSlots, setSaveSlots] = useState<SaveSlot[]>(() => readSaveSlots());
@@ -1780,6 +1782,26 @@ function App() {
               <Stat icon={<TrendingUp size={18} />} label="满意度" value={`${Math.round(game.satisfaction)}%`} />
             </div>
 
+            <div className="game-panel-tabs" aria-label="游戏信息模块">
+              {[
+                { key: 'strategy', label: '策略', hint: `${rumorForecast.heat}` },
+                { key: 'event', label: '事件', hint: currentEventChoice ? '已选' : '待选' },
+                { key: 'growth', label: '成长', hint: `${metrics.achievementProgress}%` },
+                { key: 'archive', label: '存档', hint: `${saveSlots.length}/${MAX_SAVE_SLOTS}` },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  className={activeGamePanel === item.key ? 'active' : ''}
+                  onClick={() => setActiveGamePanel(item.key as GamePanel)}
+                >
+                  <span>{item.label}</span>
+                  <small>{item.hint}</small>
+                </button>
+              ))}
+            </div>
+
+            {activeGamePanel === 'strategy' && (
+              <div className="game-panel-section">
             <div className={`reputation-branch-card ${currentReputationBranch.tier}`}>
               <div>
                 <Sparkles size={18} />
@@ -1829,6 +1851,9 @@ function App() {
               <small>下一日倾向：{rumorForecast.nextEvent.title}</small>
             </div>
 
+              </div>
+            )}
+
             <div className="npc-panel">
               <div className="avatar portrait">
                 <img src={currentNpc.portrait} alt={`${currentNpc.name}头像`} />
@@ -1841,6 +1866,8 @@ function App() {
               </div>
             </div>
 
+            {activeGamePanel === 'event' && (
+              <div className="game-panel-section">
             <div className="memory-card">
               <div>
                 <UserRoundCog size={18} />
@@ -1876,7 +1903,11 @@ function App() {
                 ))
               )}
             </div>
+              </div>
+            )}
 
+            {activeGamePanel === 'growth' && (
+              <div className="game-panel-section">
             <div className={`relationship-card ${game.relationshipQuest.status}`}>
               <div>
                 <Sparkles size={18} />
@@ -1907,6 +1938,8 @@ function App() {
                 </article>
               ))}
             </div>
+              </div>
+            )}
 
             <div className="message-box">
               <MessageSquareText size={18} />
@@ -1925,6 +1958,8 @@ function App() {
               </button>
             </div>
 
+            {activeGamePanel === 'archive' && (
+              <div className="game-panel-section">
             <div className={`local-save-card ${localSaveMeta.status}`}>
               <div>
                 <History size={18} />
@@ -1992,6 +2027,8 @@ function App() {
                 </>
               )}
             </div>
+              </div>
+            )}
           </aside>
 
           <section className="inventory">

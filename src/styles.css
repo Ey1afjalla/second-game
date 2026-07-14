@@ -273,6 +273,51 @@ h3 {
   padding: 16px;
 }
 
+.game-panel-tabs {
+  background: #eef4ee;
+  border: 1px solid #d6e0d5;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 6px;
+}
+
+.game-panel-tabs button {
+  align-items: center;
+  background: transparent;
+  border-color: transparent;
+  color: #536367;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 54px;
+  padding: 8px 6px;
+}
+
+.game-panel-tabs button.active {
+  background: #fffefb;
+  border-color: #d9c892;
+  box-shadow: 0 10px 22px rgba(44, 55, 54, 0.08);
+  color: #263641;
+}
+
+.game-panel-tabs span {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.game-panel-tabs small {
+  color: #8a7058;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.game-panel-section {
+  display: grid;
+  gap: 12px;
+}
+
 .play-panel,
 .inventory .product-card {
   border-color: rgba(239, 204, 134, 0.42);
