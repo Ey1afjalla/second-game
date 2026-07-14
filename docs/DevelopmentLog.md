@@ -1,5 +1,33 @@
 # 开发日志
 
+## 2026-07-14 v1.2.0 Final Desktop Menu Pass
+
+完成内容：
+1. Tauri 桌面端新增原生菜单，包含“文件”“视图”“帮助”三组入口。
+2. “视图”菜单支持切换游戏、运营、Agent、配置四个主工作区。
+3. “文件”菜单支持导出演示快照、重置本地演示、刷新窗口和退出应用。
+4. “帮助”菜单支持打开 GitHub 仓库，便于面试现场展示版本管理链路。
+5. React 前端新增 `desktop-menu://tab` 和 `desktop-menu://action` 监听，只在 Tauri 环境启用，Web 版继续使用页面内按钮。
+6. 配置视图新增 `desktopMenu` 字段，记录菜单事件、支持动作和桌面交付用途。
+7. 版本号更新为 `1.2.0`，作为当前作品集最终版。
+
+技术选择：
+1. 菜单层只发送意图事件，具体业务动作仍由 React 端已有函数执行，避免 Rust 侧重复实现游戏逻辑。
+2. 使用动态导入 `@tauri-apps/api/event`，保证浏览器 Web 版不会因为 Tauri API 不存在而报错。
+3. 保留 Web 页面内原有按钮，把原生菜单作为桌面快捷入口，而不是替换主 UI。
+
+问题与解决：
+1. 原桌面端只是 Tauri 壳，缺少系统级入口，面试时不容易体现“桌面应用交付”。
+2. 新增菜单后，桌面版本可以从系统菜单完成切页、导出、重置、刷新和退出，更接近可交付工具。
+3. 菜单事件和本地存档、快照、配置视图联动，补齐最终版交付闭环。
+
+版本状态：
+1. 已通过 `npm.cmd run build`。
+2. 已通过 `cargo check`。
+3. 已通过 `npm.cmd run desktop:build`。
+4. 已生成 Windows NSIS 安装包：`src-tauri/target/release/bundle/nsis/AI LiveOps Night Market_1.2.0_x64-setup.exe`。
+5. 版本管理对应 `v1.2.0-final-desktop-menu` tag。
+
 ## 2026-07-14 v1.1.2 Local Demo Reset Pass
 
 完成内容：

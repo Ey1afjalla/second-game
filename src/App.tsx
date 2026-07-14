@@ -36,6 +36,9 @@ import eventMysteriousOrder from './assets/event-mysterious-order.svg';
 type ProductId = 'moonCake' | 'spiritTea' | 'paperLantern' | 'foxMask' | 'rainBell';
 type Tab = 'game' | 'ops' | 'agent' | 'config';
 type NpcId = 'aqing' | 'umbrellaGranny' | 'foxBoy' | 'nightWatch' | 'lanternSmith';
+type DesktopMenuAction = 'exportSnapshot' | 'resetDemo' | 'refresh' | 'openGithub';
+
+const GITHUB_REPOSITORY_URL = 'https://github.com/Ey1afjalla/second-game';
 
 type Product = {
   id: ProductId;
@@ -1618,6 +1621,61 @@ function App() {
     setGame(makeInitialState());
   };
 
+  useEffect(() => {
+    if (!('__TAURI_INTERNALS__' in window)) return;
+
+    let disposed = false;
+    const unlisteners: Array<() => void> = [];
+
+    import('@tauri-apps/api/event')
+      .then(async ({ listen }) => {
+        const unlistenTab = await listen<{ tab: Tab }>('desktop-menu://tab', (event) => {
+          const nextTab = event.payload.tab;
+          if (['game', 'ops', 'agent', 'config'].includes(nextTab)) {
+            setActiveTab(nextTab);
+          }
+        });
+
+        const unlistenAction = await listen<{ action: DesktopMenuAction }>('desktop-menu://action', (event) => {
+          switch (event.payload.action) {
+            case 'exportSnapshot':
+              exportSnapshot();
+              break;
+            case 'resetDemo':
+              resetGame();
+              break;
+            case 'refresh':
+              window.location.reload();
+              break;
+            case 'openGithub':
+              window.open(GITHUB_REPOSITORY_URL, '_blank', 'noopener,noreferrer');
+              break;
+            default:
+              break;
+          }
+        });
+
+        if (disposed) {
+          unlistenTab();
+          unlistenAction();
+          return;
+        }
+
+        unlisteners.push(unlistenTab, unlistenAction);
+      })
+      .catch(() => {
+        setLocalSaveMeta((meta) => ({
+          ...meta,
+          message: '桌面菜单监听未启用，Web 版本仍可使用页面内操作。',
+        }));
+      });
+
+    return () => {
+      disposed = true;
+      unlisteners.forEach((unlisten) => unlisten());
+    };
+  }, [exportSnapshot, resetGame]);
+
   const applyConfigDraft = () => {
     setGame((state) => {
       const validation = validateActivityConfig(report.configDraft);
@@ -2800,6 +2858,14 @@ function ConfigView({
       },
       desktopMigrationPath: 'Tauri SQLite or local file snapshot',
       purpose: '支持 Web 和桌面壳本地演示，刷新后保留进度，并可导出或导入复盘证据',
+    },
+    desktopMenu: {
+      enabled: true,
+      runtime: 'Tauri',
+      events: ['desktop-menu://tab', 'desktop-menu://action'],
+      tabs: ['game', 'ops', 'agent', 'config'],
+      actions: ['exportSnapshot', 'resetDemo', 'refresh', 'openGithub'],
+      purpose: '让桌面版本具备原生菜单入口，面试演示时可从系统菜单切换视图、导出快照和重置现场。',
     },
     guardrails: ['AI can suggest config drafts', 'Schema validation required', 'Human approval required before applying', 'Rollback required for applied config'],
   };

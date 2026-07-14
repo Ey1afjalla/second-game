@@ -28,6 +28,11 @@ flowchart LR
   History --> OpsLog
   Snapshot --> Import["快照导入校验"]
   Import --> Game
+  TauriMenu["Tauri 原生菜单"] --> Tauri["Tauri 桌面壳"]
+  TauriMenu --> Game
+  TauriMenu --> Ops
+  TauriMenu --> Agent
+  TauriMenu --> Config
   Game --> Tauri["Tauri 桌面壳"]
   Ops --> Tauri
   Agent --> Tauri
@@ -41,7 +46,7 @@ flowchart LR
 3. Agent 工作台：展示运营日报、异常假设、行动计划、调参建议、工具调用轨迹和配置草案。
 4. 配置工作台：展示商品、运营分析和 Agent 配置结构，支持 schema 校验、人工确认、应用、历史记录和回滚。
 5. 本地持久化：使用 `localStorage` 自动保存当前演示进度，支持 3 个本地演示槽位，支持重置当前自动存档回到干净开局，并支持导出或导入包含事件流、关键指标、Agent 报告和配置草案的 JSON 快照；运营页还能导出包含工具轨迹和配置历史的本地运营日志 JSON。
-6. Tauri 桌面壳：复用 Web 版本，提供本地窗口、开发启动和 Windows 安装包构建能力。
+6. Tauri 桌面壳：复用 Web 版本，提供本地窗口、开发启动、Windows 安装包构建能力和原生菜单入口；菜单通过 `desktop-menu://tab` 与 `desktop-menu://action` 事件驱动前端切页、导出快照和重置演示。
 
 ## 后续演进
 
@@ -50,4 +55,4 @@ flowchart LR
 3. 引入真实实验分流，给 A/B 测试增加实验 ID、样本量和显著性判断。
 4. 接入真实模型 API，让 Agent 读取工具结果后生成报告。
 5. 将前端配置历史和本地存档迁移到后端或 Tauri 本地 SQLite。
-6. 增加桌面端菜单，将本地存档能力迁移到 Tauri 文件或 SQLite。
+6. 将本地存档能力迁移到 Tauri 文件或 SQLite。
