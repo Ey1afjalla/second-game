@@ -1613,7 +1613,10 @@ function App() {
     });
   };
 
-  const resetGame = () => setGame(makeInitialState());
+  const resetGame = () => {
+    localSaveNoticeRef.current = '已重置为干净开局，并覆盖当前自动存档；演示槽位仍然保留。';
+    setGame(makeInitialState());
+  };
 
   const applyConfigDraft = () => {
     setGame((state) => {
@@ -1881,6 +1884,10 @@ function App() {
                 导入演示快照
                 <input type="file" accept="application/json,.json" onChange={importSnapshot} />
               </label>
+              <button className="local-reset-button" onClick={resetGame}>
+                <RotateCcw size={18} />
+                重置本地演示
+              </button>
               <div className="save-slot-panel">
                 <div>
                   <span>演示槽位</span>
@@ -2228,6 +2235,11 @@ function buildAgentReport(game: GameState, metrics: ReturnType<typeof buildMetri
       impact: `当前保留 ${game.events.filter((event) => event.type === 'sale').length ? '可复盘成交局面' : '初始局面'}，建议为高热度、关系任务和配置回滚分别保存槽位。`,
     },
     {
+      title: '重置本地演示开局',
+      owner: '桌面交付',
+      impact: '面试演示结束后可一键回到干净 Day 1，同时保留已准备好的槽位，降低反复导入快照的成本。',
+    },
+    {
       title: '推进灯纸匠关系线',
       owner: '剧情运营',
       impact: game.relationshipQuest.status === 'completed' ? '关系奖励已生效，可观察纸灯笼补货频率。' : '引导玩家卖出纸灯笼，解锁补货折扣形成成长反馈。',
@@ -2295,6 +2307,12 @@ function buildAgentReport(game: GameState, metrics: ReturnType<typeof buildMetri
       before: 'single_latest_save',
       after: 'three_local_demo_slots',
       reason: '面试演示常需要在多个局面之间切换，多槽位能减少现场重玩成本。',
+    },
+    {
+      key: 'local_demo_reset',
+      before: 'manual_browser_storage_clear',
+      after: 'one_click_clean_start_with_slots_kept',
+      reason: '本地桌面演示需要稳定回到开局，同时不能误删面试前准备好的演示槽位。',
     },
     {
       key: 'ops_log_export',
@@ -2767,6 +2785,12 @@ function ConfigView({
         key: LOCAL_SAVE_SLOTS_KEY,
         maxSlots: MAX_SAVE_SLOTS,
         actions: ['saveCurrentState', 'loadSlot', 'deleteSlot'],
+      },
+      resetCurrentDemo: {
+        enabled: true,
+        action: 'resetToInitialStateAndOverwriteCurrentAutoSave',
+        keeps: ['saveSlots', 'importableSnapshots'],
+        purpose: '面试演示后快速回到干净开局，同时保留预设槽位。',
       },
       opsLogExport: {
         enabled: true,

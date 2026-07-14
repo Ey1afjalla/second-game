@@ -823,6 +823,17 @@ blockquote {
   border-color: #334855;
 }
 
+.local-save-card .local-reset-button {
+  background: #fff7eb;
+  border-color: #e2c49a;
+  color: #8a5b2d;
+}
+
+.local-save-card .local-reset-button:hover {
+  background: #f7ead5;
+  border-color: #cfaa73;
+}
+
 .snapshot-import input {
   display: none;
 }
