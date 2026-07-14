@@ -37,15 +37,13 @@
 14. Tauri 桌面端整合现有游戏、运营后台、AI 工作台和配置工作台。
 15. 作品集演示脚本、面试讲解材料和关键界面截图。
 
-## 截图
+## 演示材料
 
-![游戏主界面](docs/screenshots/01-game-main.png)
-
-![运营后台](docs/screenshots/02-ops-dashboard.png)
-
-![Agent 工作台](docs/screenshots/03-agent-workbench.png)
-
-![配置工作台](docs/screenshots/04-config-workbench.png)
+1. [演示脚本](docs/DemoScript.md)
+2. [面试讲解材料](docs/InterviewGuide.md)
+3. [架构说明](docs/Architecture.md)
+4. [Agent 设计记录](docs/PromptAndAgentDesign.md)
+5. [创新点记录](docs/InnovationLog.md)
 
 ## 本地运行
 
@@ -73,13 +71,15 @@ Windows 安装包生成位置：
 src-tauri/target/release/bundle/nsis/AI LiveOps Night Market_1.0.0_x64-setup.exe
 ```
 
-## 演示材料
+## 截图
 
-1. [演示脚本](docs/DemoScript.md)
-2. [面试讲解材料](docs/InterviewGuide.md)
-3. [架构说明](docs/Architecture.md)
-4. [Agent 设计记录](docs/PromptAndAgentDesign.md)
-5. [创新点记录](docs/InnovationLog.md)
+![游戏主界面](docs/screenshots/01-game-main.png)
+
+![运营后台](docs/screenshots/02-ops-dashboard.png)
+
+![Agent 工作台](docs/screenshots/03-agent-workbench.png)
+
+![配置工作台](docs/screenshots/04-config-workbench.png)
 
 ## 当前版本
 
