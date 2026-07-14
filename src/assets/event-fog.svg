@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="夜雾压街事件插图">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#172632"/>
+      <stop offset="1" stop-color="#3d4f4a"/>
+    </linearGradient>
+    <radialGradient id="lamp" cx="45%" cy="36%" r="48%">
+      <stop offset="0" stop-color="#ffe6a8" stop-opacity=".88"/>
+      <stop offset=".45" stop-color="#d98057" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#172632" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="320" height="180" rx="18" fill="url(#sky)"/>
+  <rect width="320" height="180" rx="18" fill="url(#lamp)"/>
+  <path fill="#101a22" d="M0 124h320v56H0z"/>
+  <path fill="#2b2b25" d="M70 82h178l-18 42H52z"/>
+  <path fill="#5f382d" d="M82 95h142v48H82z"/>
+  <path fill="#d15f43" d="M130 35h28v42h-28zM190 45h22v34h-22z"/>
+  <path fill="#ffd27f" d="M137 42h14v28h-14zM196 51h10v22h-10z"/>
+  <path fill="none" stroke="#e0c492" stroke-linecap="round" stroke-width="6" d="M20 104c52-18 94 14 146-1 53-15 87-17 134 4M-12 137c60-25 111 15 168-5 66-23 113-15 177 5"/>
+  <path fill="none" stroke="#dce2d4" stroke-linecap="round" stroke-opacity=".62" stroke-width="11" d="M-5 74c63-16 95 18 145 3 58-17 108-22 185 6M22 118c52-15 105 12 155-4 54-17 81-16 125 3"/>
+  <circle cx="255" cy="104" r="9" fill="#18252b"/>
+  <path fill="#18252b" d="M248 113h16l8 41h-32z"/>
+</svg>

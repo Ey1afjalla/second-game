@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="纸灯将熄事件插图">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#1b2330"/>
+      <stop offset="1" stop-color="#312b2f"/>
+    </linearGradient>
+    <radialGradient id="ember" cx="50%" cy="42%" r="36%">
+      <stop offset="0" stop-color="#ffb66b" stop-opacity=".82"/>
+      <stop offset=".42" stop-color="#9a3e35" stop-opacity=".36"/>
+      <stop offset="1" stop-color="#111722" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="320" height="180" rx="18" fill="url(#bg)"/>
+  <rect width="320" height="180" rx="18" fill="url(#ember)"/>
+  <path fill="#141922" d="M0 134h320v46H0z"/>
+  <path fill="#6b3d31" d="M72 88h176l-14 46H58z"/>
+  <path fill="#2c1f22" d="M94 101h130v40H94z"/>
+  <path fill="none" stroke="#80614f" stroke-width="4" d="M160 20v33"/>
+  <path fill="#aa453c" d="M128 52h64l-12 72h-40z"/>
+  <path fill="#40272b" d="M140 61h40l-8 52h-24z"/>
+  <circle cx="160" cy="89" r="10" fill="#ff8053"/>
+  <circle cx="160" cy="89" r="22" fill="#ff8053" opacity=".14"/>
+  <path fill="#d9c082" d="m93 126 37-15 8 16-37 15zM191 125l42-16 7 16-42 16z"/>
+  <path fill="#a14b40" d="m112 120 9-3 4 11-9 3zM214 119l9-3 4 11-9 3z"/>
+  <path fill="none" stroke="#d8cfba" stroke-linecap="round" stroke-opacity=".4" stroke-width="5" d="M40 64c45 15 75-10 115 5 44 17 82 8 128-5M18 150c71-14 108 9 163-1 40-8 77-7 122 4"/>
+</svg>

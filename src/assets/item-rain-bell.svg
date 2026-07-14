@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="雨铃">
+  <rect width="128" height="128" rx="26" fill="#172f3d"/>
+  <path d="M64 20 v21" stroke="#c8e4e8" stroke-width="7" stroke-linecap="round"/>
+  <path d="M39 53 q25-32 50 0 l8 42 H31z" fill="#8cc7c5" stroke="#284656" stroke-width="7" stroke-linejoin="round"/>
+  <circle cx="64" cy="101" r="10" fill="#f0c777" stroke="#53372c" stroke-width="5"/>
+  <path d="M34 28 q6 7 0 14 M91 28 q6 7 0 14 M23 43 q5 6 0 12 M105 43 q5 6 0 12" stroke="#b7d9db" stroke-width="5" stroke-linecap="round"/>
+</svg>

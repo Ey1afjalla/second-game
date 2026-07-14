@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="阿青头像">
+  <rect width="160" height="160" rx="36" fill="#18313d"/>
+  <circle cx="80" cy="82" r="58" fill="#f1c48f"/>
+  <path d="M28 76 q8-55 56-59 q43 8 50 58 q-29-18-54-15 q-24 1-52 16z" fill="#203341"/>
+  <path d="M55 86 q10-8 20 0 M101 86 q-10-8-20 0" stroke="#203341" stroke-width="7" stroke-linecap="round"/>
+  <path d="M68 111 q13 9 27 0" stroke="#9e4d43" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="120" cy="46" r="23" fill="#f1b95d" opacity="0.92"/>
+  <path d="M120 20 v-10 M120 69 v16" stroke="#f7d98d" stroke-width="6" stroke-linecap="round"/>
+</svg>

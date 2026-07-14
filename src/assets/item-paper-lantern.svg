@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="纸灯笼">
+  <rect width="128" height="128" rx="26" fill="#1b2f3a"/>
+  <circle cx="64" cy="66" r="45" fill="#f3b35f" opacity="0.22"/>
+  <path d="M38 36 q26-25 52 0 v58 q-26 24-52 0z" fill="#d95543" stroke="#5b2926" stroke-width="7"/>
+  <path d="M47 36 q17 9 34 0 M47 94 q17-10 34 0 M64 32 v67" stroke="#ffd18a" stroke-width="5" stroke-linecap="round"/>
+  <path d="M64 15 v18 M64 100 v13" stroke="#ffd18a" stroke-width="7" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="神秘订单事件插图">
+  <defs>
+    <linearGradient id="table" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#2a3440"/>
+      <stop offset="1" stop-color="#5a382f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="48%" r="45%">
+      <stop offset="0" stop-color="#ffe0a3" stop-opacity=".85"/>
+      <stop offset=".52" stop-color="#be6549" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#17202a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="320" height="180" rx="18" fill="#17202a"/>
+  <rect width="320" height="180" rx="18" fill="url(#glow)"/>
+  <path fill="url(#table)" d="M20 90h280l-25 76H45z"/>
+  <path fill="#ead7a7" d="m105 59 117 13-12 72-119-16z"/>
+  <path fill="#c5a26f" d="m117 75 76 8-2 8-76-8zM114 95l56 7-2 8-56-7zM111 116l74 9-2 8-74-9z"/>
+  <circle cx="234" cy="121" r="13" fill="#d79a43"/>
+  <circle cx="254" cy="133" r="13" fill="#bc773b"/>
+  <path fill="#0d1118" d="M70 92c23 4 37 16 47 38-31-9-47-20-47-38z"/>
+  <path fill="#1f2933" d="M69 92c-8 20-2 38 18 55 2-26-4-43-18-55z"/>
+  <path fill="none" stroke="#ffd68e" stroke-linecap="round" stroke-opacity=".34" stroke-width="6" d="M38 62c42-19 81 12 123-2 52-17 87-16 128 2"/>
+</svg>

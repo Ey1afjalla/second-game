@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="醒魂茶">
+  <rect width="128" height="128" rx="26" fill="#172b31"/>
+  <path d="M37 60 h52 l-7 38 H44z" fill="#d9a15c" stroke="#59352b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M89 67 q22 3 16 22 q-5 15-23 9" fill="none" stroke="#d9a15c" stroke-width="9" stroke-linecap="round"/>
+  <path d="M47 41 q-10-17 6-28 M66 42 q-11-19 7-31 M84 43 q-9-16 5-27" fill="none" stroke="#c7e8cc" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
+  <ellipse cx="64" cy="60" rx="27" ry="10" fill="#7cc8a7"/>
+</svg>

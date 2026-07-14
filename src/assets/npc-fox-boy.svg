@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="狐面少年头像">
+  <rect width="160" height="160" rx="36" fill="#211f30"/>
+  <circle cx="80" cy="88" r="55" fill="#efc08c"/>
+  <path d="M35 44 l28 14 q17-11 34 0 l28-14 l-11 52 q-33 40-68 0z" fill="#f6e8cf" stroke="#6d302d" stroke-width="7"/>
+  <path d="M56 82 q12-10 24 0 M104 82 q-12-10-24 0" stroke="#25303e" stroke-width="6" stroke-linecap="round"/>
+  <path d="M80 93 l-9 12 h18z" fill="#d75c4a"/>
+  <path d="M50 59 l-19-19 M110 59 l19-19" stroke="#d75c4a" stroke-width="6" stroke-linecap="round"/>
+</svg>

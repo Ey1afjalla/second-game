@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="雨夜书生头像">
+  <rect width="160" height="160" rx="36" fill="#173141"/>
+  <path d="M25 64 q55-55 110 0" fill="#b77d50" stroke="#4a2e28" stroke-width="8"/>
+  <circle cx="80" cy="89" r="50" fill="#eec393"/>
+  <path d="M39 72 q37-28 82 0 q-17-45-82 0z" fill="#243746"/>
+  <path d="M58 91 q10-7 20 0 M102 91 q-10-7-20 0" stroke="#243746" stroke-width="6" stroke-linecap="round"/>
+  <path d="M67 117 q13 7 26 0" stroke="#985347" stroke-width="5" stroke-linecap="round"/>
+  <rect x="96" y="105" width="28" height="35" rx="5" fill="#7b4a36" stroke="#38251f" stroke-width="5"/>
+</svg>
